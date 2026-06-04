@@ -1,0 +1,30 @@
+{
+  "name": "@cleannation/shared-utils",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "type-check": "tsc --noEmit",
+    "dev": "tsc --watch"
+  },
+  "dependencies": {
+    "@cleannation/shared-types": "file:../shared-types",
+    "pino": "^9.0.0",
+    "pino-pretty": "^11.0.0",
+    "uuid": "^10.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.1",
+    "@types/uuid": "^10.0.0",
+    "fastify": "^5.8.5",
+    "typescript": "^5.4.0"
+  }
+}
