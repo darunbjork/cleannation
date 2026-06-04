@@ -1,0 +1,28 @@
+{
+  "name": "@cleannation/gateway",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "bun run --watch src/index.ts",
+    "start": "bun run src/index.ts",
+    "build": "tsc",
+    "type-check": "tsc --noEmit",
+    "lint": "eslint src --max-warnings 0"
+  },
+  "dependencies": {
+    "@cleannation/shared-types": "file:../packages/shared-types",
+    "@cleannation/shared-utils": "file:../packages/shared-utils",
+    "@fastify/cookie": "^9.0.0",
+    "@fastify/cors": "^9.0.0",
+    "@fastify/helmet": "^11.0.0",
+    "@fastify/http-proxy": "^9.0.0",
+    "@fastify/jwt": "^8.0.0",
+    "@fastify/rate-limit": "^9.0.0",
+    "@fastify/websocket": "^10.0.0",
+    "fastify": "^4.28.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.4.0"
+  }
+}
