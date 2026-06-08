@@ -4,12 +4,6 @@ import {
   resolveCorrelationId,
 } from "@cleannation/shared-utils"
 
-declare module "fastify" {
-  interface FastifyRequest {
-    correlationId: string
-  }
-}
-
 export default fp(async function correlationIdMiddleware(
   fastify: FastifyInstance
 ) {

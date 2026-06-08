@@ -1,9 +1,4 @@
-// packages/shared-types/src/errors/error.types.ts
-// Every error in the platform has a typed code.
-// Frontend and consumers switch on ErrorCode — never parse message strings.
-
 export enum ErrorCode {
-  // Auth errors
   UNAUTHORIZED = "UNAUTHORIZED",
   FORBIDDEN = "FORBIDDEN",
   TOKEN_EXPIRED = "TOKEN_EXPIRED",
@@ -11,44 +6,29 @@ export enum ErrorCode {
   INVALID_CREDENTIALS = "INVALID_CREDENTIALS",
   EMAIL_ALREADY_EXISTS = "EMAIL_ALREADY_EXISTS",
   USERNAME_ALREADY_EXISTS = "USERNAME_ALREADY_EXISTS",
-
-  // Resource errors
   NOT_FOUND = "NOT_FOUND",
   ALREADY_EXISTS = "ALREADY_EXISTS",
-
-  // Validation
   VALIDATION_ERROR = "VALIDATION_ERROR",
   INVALID_INPUT = "INVALID_INPUT",
-
-  // Event errors
   EVENT_FULL = "EVENT_FULL",
   EVENT_NOT_ACTIVE = "EVENT_NOT_ACTIVE",
   ALREADY_REGISTERED = "ALREADY_REGISTERED",
   NOT_REGISTERED = "NOT_REGISTERED",
   EVENT_ALREADY_COMPLETED = "EVENT_ALREADY_COMPLETED",
-
-  // Media errors
   UPLOAD_FAILED = "UPLOAD_FAILED",
   FILE_TOO_LARGE = "FILE_TOO_LARGE",
   INVALID_FILE_TYPE = "INVALID_FILE_TYPE",
   VERIFICATION_FAILED = "VERIFICATION_FAILED",
-
-  // Payment / subscription errors
   SUBSCRIPTION_REQUIRED = "SUBSCRIPTION_REQUIRED",
   TIER_LIMIT_REACHED = "TIER_LIMIT_REACHED",
   PAYMENT_FAILED = "PAYMENT_FAILED",
   SUBSCRIPTION_CANCELLED = "SUBSCRIPTION_CANCELLED",
-
-  // Infrastructure
   RATE_LIMITED = "RATE_LIMITED",
   SERVICE_UNAVAILABLE = "SERVICE_UNAVAILABLE",
   INTERNAL = "INTERNAL",
-
-  // External services
   EXTERNAL_API_ERROR = "EXTERNAL_API_ERROR",
 }
 
-// HTTP status code mapping — used by the global error handler
 export const ERROR_STATUS_MAP: Record<ErrorCode, number> = {
   [ErrorCode.UNAUTHORIZED]: 401,
   [ErrorCode.FORBIDDEN]: 403,

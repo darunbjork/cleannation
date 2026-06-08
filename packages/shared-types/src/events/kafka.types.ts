@@ -1,8 +1,3 @@
-// packages/shared-types/src/events/kafka.types.ts
-// Every Kafka event payload is typed here.
-// Producer and consumer import the same interface — contract enforced at compile time.
-// Topic names are const — never hardcode strings in service code.
-
 export const KAFKA_TOPICS = {
   USER_REGISTERED: "user.registered",
   USER_UPDATED: "user.updated",
@@ -29,16 +24,13 @@ export const KAFKA_TOPICS = {
 
 export type KafkaTopic = (typeof KAFKA_TOPICS)[keyof typeof KAFKA_TOPICS]
 
-// Base envelope — every Kafka message includes these fields
 export interface KafkaEventEnvelope<TPayload> {
-  eventId: string       // UUID — used for deduplication (idempotency)
+  eventId: string
   topic: KafkaTopic
-  version: "1.0"        // schema version — increment when payload changes
-  occurredAt: string    // ISO 8601 — when the domain event happened
+  version: "1.0"
+  occurredAt: string
   payload: TPayload
 }
-
-// ── Payload types per topic ───────────────────────────────────────────────
 
 export interface UserRegisteredPayload {
   userId: string

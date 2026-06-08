@@ -6,8 +6,7 @@ A civic SaaS platform for nationwide community cleanup events.
 Microservice architecture. 100% open-source stack. $0.00/month infrastructure locally.
 
 ## Status
-✅ Step 1 of N — Architecture blueprint complete
-✅ Step 2 of N — Shared types package created
+🚧 Step 1 of N — Architecture blueprint complete
 
 ## Architecture
 7 microservices + API Gateway + Kafka event bus

@@ -16,15 +16,13 @@
     "dev": "tsc --watch"
   },
   "dependencies": {
-    "@cleannation/shared-types": "file:../shared-types",
+    "@cleannation/shared-types": "workspace:*",
     "pino": "^9.0.0",
     "pino-pretty": "^11.0.0",
     "uuid": "^10.0.0"
   },
   "devDependencies": {
-    "@types/node": "^25.9.1",
     "@types/uuid": "^10.0.0",
-    "fastify": "^5.8.5",
     "typescript": "^5.4.0"
   }
 }

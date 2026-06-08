@@ -1,7 +1,3 @@
-// packages/shared-types/src/index.ts
-// Single entry point — services import from "@cleannation/shared-types"
-// Never import directly from subpaths in service code.
-
 // Auth & RBAC
 export * from "./auth/rbac.types"
 

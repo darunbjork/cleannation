@@ -1,13 +1,9 @@
-// packages/shared-types/src/domain/payment.types.ts
-// Subscription and payment types.
-// payment-service owns these records.
-
 export type SubscriptionTier =
   | "free"
-  | "organizer"        // $19/mo
-  | "pro_organizer"    // $49/mo
-  | "enterprise"       // $299/mo
-  | "municipality"     // custom pricing
+  | "organizer"
+  | "pro_organizer"
+  | "enterprise"
+  | "municipality"
 
 export type SubscriptionStatus =
   | "active"
@@ -23,16 +19,25 @@ export interface Subscription {
   status: SubscriptionStatus
   currentPeriodStart: string
   currentPeriodEnd: string
-  stripeSubscriptionId: string | null   // null for municipality (invoiced)
+  stripeSubscriptionId: string | null
   cancelAtPeriodEnd: boolean
   createdAt: string
   updatedAt: string
 }
 
-// Tier feature flags — checked by other services via JWT claim
+export interface TierFeatures {
+  maxEventsPerMonth: number
+  maxParticipantsPerEvent: number
+  aiPhotoVerification: boolean
+  analyticsExport: boolean
+  whiteLabel: boolean
+  soapApiAccess: boolean
+  slaGuarantee: boolean
+}
+
 export const TIER_FEATURES: Record<SubscriptionTier, TierFeatures> = {
   free: {
-    maxEventsPerMonth: 0,        // cannot create events
+    maxEventsPerMonth: 0,
     maxParticipantsPerEvent: 0,
     aiPhotoVerification: false,
     analyticsExport: false,
@@ -50,7 +55,7 @@ export const TIER_FEATURES: Record<SubscriptionTier, TierFeatures> = {
     slaGuarantee: false,
   },
   pro_organizer: {
-    maxEventsPerMonth: -1,       // -1 = unlimited
+    maxEventsPerMonth: -1,
     maxParticipantsPerEvent: -1,
     aiPhotoVerification: true,
     analyticsExport: true,
@@ -73,17 +78,7 @@ export const TIER_FEATURES: Record<SubscriptionTier, TierFeatures> = {
     aiPhotoVerification: true,
     analyticsExport: true,
     whiteLabel: true,
-    soapApiAccess: true,   // SOAP required for gov procurement systems
+    soapApiAccess: true,
     slaGuarantee: true,
   },
-}
-
-export interface TierFeatures {
-  maxEventsPerMonth: number
-  maxParticipantsPerEvent: number
-  aiPhotoVerification: boolean
-  analyticsExport: boolean
-  whiteLabel: boolean
-  soapApiAccess: boolean
-  slaGuarantee: boolean
 }

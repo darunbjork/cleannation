@@ -23,9 +23,7 @@ export function createLogger(serviceName: string): Logger {
 
   const options: LoggerOptions = {
     level: process.env["LOG_LEVEL"] ?? "info",
-    base: {
-      service: serviceName,
-    },
+    base: { service: serviceName },
     timestamp: pino.stdTimeFunctions.isoTime,
     redact: {
       paths: [
@@ -60,57 +58,25 @@ export function createLogger(serviceName: string): Logger {
   return pino(options)
 }
 
-export function createChildLogger(
-  logger: Logger,
-  context: LogContext
-): Logger {
+export function createChildLogger(logger: Logger, context: LogContext): Logger {
   return logger.child(context)
 }
 
-export function logRequest(
-  logger: Logger,
-  context: LogContext & {
-    method: string
-    path: string
-    statusCode: number
-    durationMs: number
-  }
-): void {
+export function logRequest(logger: Logger, context: LogContext & { method: string; path: string; statusCode: number; durationMs: number }): void {
   logger.info(context, "HTTP request")
 }
 
-export function logKafkaEvent(
-  logger: Logger,
-  context: LogContext & {
-    kafkaTopic: string
-    action: "produced" | "consumed" | "failed"
-    durationMs?: number
-  }
-): void {
+export function logKafkaEvent(logger: Logger, context: LogContext & { kafkaTopic: string; action: "produced" | "consumed" | "failed"; durationMs?: number }): void {
   logger.info(context, `Kafka event ${context.action}`)
 }
 
-export function logGrpcCall(
-  logger: Logger,
-  context: LogContext & {
-    grpcMethod: string
-    action: "sent" | "received" | "failed"
-    durationMs?: number
-  }
-): void {
+export function logGrpcCall(logger: Logger, context: LogContext & { grpcMethod: string; action: "sent" | "received" | "failed"; durationMs?: number }): void {
   logger.info(context, `gRPC call ${context.action}`)
 }
 
-export function logServiceError(
-  logger: Logger,
-  error: unknown,
-  context: LogContext = {}
-): void {
-  const errorMessage =
-    error instanceof Error ? error.message : "Unknown error"
-  const errorStack =
-    error instanceof Error ? error.stack : undefined
-
+export function logServiceError(logger: Logger, error: unknown, context: LogContext = {}): void {
+  const errorMessage = error instanceof Error ? error.message : "Unknown error"
+  const errorStack = error instanceof Error ? error.stack : undefined
   const isDev = process.env["NODE_ENV"] !== "production"
 
   logger.error(

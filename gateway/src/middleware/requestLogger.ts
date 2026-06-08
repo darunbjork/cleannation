@@ -12,8 +12,7 @@ export default fp(async function requestLoggerMiddleware(
   })
 
   fastify.addHook("onResponse", async (request, reply) => {
-    const startTime = (request as unknown as { startTime?: number })
-      .startTime
+    const startTime = (request as unknown as { startTime?: number }).startTime
 
     const durationMs =
       startTime !== undefined ? Date.now() - startTime : -1

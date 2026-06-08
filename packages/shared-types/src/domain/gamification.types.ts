@@ -1,7 +1,3 @@
-// packages/shared-types/src/domain/gamification.types.ts
-// Points, badges, and leaderboard types.
-// gamification-service owns these records.
-
 export type BadgeCategory =
   | "first_cleanup"
   | "events_10"
@@ -11,8 +7,8 @@ export type BadgeCategory =
   | "streak_30day"
   | "region_champion"
   | "national_champion"
-  | "ton_collected"       // 1000kg of waste across events
-  | "organizer_100"       // organized events with 100+ participants
+  | "ton_collected"
+  | "organizer_100"
 
 export interface Badge {
   id: string
@@ -20,7 +16,7 @@ export interface Badge {
   name: string
   description: string
   iconUrl: string
-  pointsBonus: number     // extra points awarded when badge is earned
+  pointsBonus: number
   rarity: "common" | "rare" | "epic" | "legendary"
 }
 
@@ -31,9 +27,9 @@ export interface UserStats {
   eventsCompleted: number
   currentStreakDays: number
   longestStreakDays: number
-  kgWasteEstimated: number  // estimated from event reports
+  kgWasteEstimated: number
   badgesEarned: BadgeCategory[]
-  globalRank: number | null    // null if not enough data
+  globalRank: number | null
   regionRank: number | null
   updatedAt: string
 }
@@ -52,13 +48,12 @@ export type LeaderboardScope = "global" | "national" | "regional" | "city"
 
 export interface Leaderboard {
   scope: LeaderboardScope
-  scopeId: string | null    // null for global, countryCode/regionId/cityId otherwise
+  scopeId: string | null
   period: "all_time" | "this_month" | "this_week"
   entries: LeaderboardEntry[]
   generatedAt: string
 }
 
-// WebSocket message for live point updates during active events
 export type GamificationWsMessage =
   | { type: "points_awarded"; payload: { userId: string; points: number; reason: string } }
   | { type: "badge_earned"; payload: { userId: string; badge: Badge } }

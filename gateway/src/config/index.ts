@@ -21,7 +21,8 @@ export const config = {
   nodeEnv: process.env["NODE_ENV"] ?? "development",
 
   jwt: {
-    publicKey: requireEnv("JWT_PUBLIC_KEY").replace(/\\n/g, "\n"),
+    // PublicKey handled below
+    publicKey: requireEnv("JWT_PUBLIC_KEY"),
     algorithm: "RS256" as const,
     accessTokenExpiry: "15m",
   },
@@ -49,5 +50,3 @@ export const config = {
     payment: { max: 20, timeWindow: "1 minute" },
   },
 } as const
-
-export type Config = typeof config

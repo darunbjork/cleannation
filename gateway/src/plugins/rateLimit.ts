@@ -1,12 +1,12 @@
 import fp from "fastify-plugin"
-import rateLimit from "@fastify/rate-limit"
-import type { FastifyInstance } from "fastify"
+import rateLimit, { type RateLimitPluginOptions } from "@fastify/rate-limit"
+import type { FastifyInstance, FastifyPluginAsync } from "fastify"
 import { config } from "../config/index"
 
 export default fp(async function rateLimitPlugin(
   fastify: FastifyInstance
 ) {
-  await fastify.register(rateLimit, {
+  await fastify.register(rateLimit as unknown as FastifyPluginAsync<RateLimitPluginOptions>, {
     redis: process.env["REDIS_URL"]
       ? {
           host: new URL(process.env["REDIS_URL"]).hostname,

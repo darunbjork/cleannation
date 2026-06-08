@@ -1,0 +1,144 @@
+version: "3.9"
+
+services:
+  # ── DATABASES (one per service — microservices contract) ──
+
+  postgres-auth:
+    image: postgres:16-alpine
+    container_name: cn_postgres_auth
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: auth_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_auth_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d auth_db"]
+      interval: 5s
+      retries: 5
+
+  postgres-event:
+    image: postgres:16-alpine
+    container_name: cn_postgres_event
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: event_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_event_data:/var/lib/postgresql/data
+
+  postgres-location:
+    image: postgis/postgis:16-3.4-alpine
+    container_name: cn_postgres_location
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: location_db
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres_location_data:/var/lib/postgresql/data
+
+  postgres-media:
+    image: postgres:16-alpine
+    container_name: cn_postgres_media
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: media_db
+    ports:
+      - "5435:5432"
+    volumes:
+      - postgres_media_data:/var/lib/postgresql/data
+
+  postgres-gamification:
+    image: postgres:16-alpine
+    container_name: cn_postgres_gamification
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: gamification_db
+    ports:
+      - "5436:5432"
+    volumes:
+      - postgres_gamification_data:/var/lib/postgresql/data
+
+  postgres-notification:
+    image: postgres:16-alpine
+    container_name: cn_postgres_notification
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: notification_db
+    ports:
+      - "5437:5432"
+    volumes:
+      - postgres_notification_data:/var/lib/postgresql/data
+
+  postgres-payment:
+    image: postgres:16-alpine
+    container_name: cn_postgres_payment
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: payment_db
+    ports:
+      - "5438:5432"
+    volumes:
+      - postgres_payment_data:/var/lib/postgresql/data
+
+  # ── REDIS ──────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: cn_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+
+  # ── KAFKA (Redpanda — Kafka-compatible, zero JVM) ──────
+  redpanda:
+    image: redpandadata/redpanda:latest
+    container_name: cn_kafka
+    command:
+      - redpanda
+      - start
+      - --kafka-addr internal://0.0.0.0:9092,external://0.0.0.0:19092
+      - --advertise-kafka-addr internal://redpanda:9092,external://localhost:19092
+      - --smp 1
+      - --memory 1G
+      - --mode dev-container
+    ports:
+      - "19092:19092"
+      - "9644:9644"
+    volumes:
+      - redpanda_data:/var/lib/redpanda/data
+
+  # ── KAFKA UI ───────────────────────────────────────────
+  redpanda-console:
+    image: redpandadata/console:latest
+    container_name: cn_kafka_ui
+    ports:
+      - "8080:8080"
+    environment:
+      KAFKA_BROKERS: redpanda:9092
+    depends_on:
+      - redpanda
+
+volumes:
+  postgres_auth_data:
+  postgres_event_data:
+  postgres_location_data:
+  postgres_media_data:
+  postgres_gamification_data:
+  postgres_notification_data:
+  postgres_payment_data:
+  redis_data:
+  redpanda_data:

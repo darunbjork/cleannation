@@ -5,11 +5,7 @@ export class AppError extends Error {
   public readonly statusCode: number
   public readonly details: unknown
 
-  constructor(
-    code: ErrorCode,
-    message: string,
-    details: unknown = null
-  ) {
+  constructor(code: ErrorCode, message: string, details: unknown = null) {
     super(message)
     this.name = "AppError"
     this.code = code
@@ -76,11 +72,7 @@ export class AlreadyExistsError extends AppError {
 
 export class ValidationError extends AppError {
   constructor(details: unknown) {
-    super(
-      ErrorCode.VALIDATION_ERROR,
-      "Validation failed",
-      details
-    )
+    super(ErrorCode.VALIDATION_ERROR, "Validation failed", details)
   }
 }
 
@@ -116,54 +108,36 @@ export class FileTooLargeError extends AppError {
 
 export class InvalidFileTypeError extends AppError {
   constructor(allowed: string[]) {
-    super(
-      ErrorCode.INVALID_FILE_TYPE,
-      `Invalid file type. Allowed: ${allowed.join(", ")}`
-    )
+    super(ErrorCode.INVALID_FILE_TYPE, `Invalid file type. Allowed: ${allowed.join(", ")}`)
   }
 }
 
 export class SubscriptionRequiredError extends AppError {
   constructor(requiredTier: string) {
-    super(
-      ErrorCode.SUBSCRIPTION_REQUIRED,
-      `This feature requires the ${requiredTier} plan`
-    )
+    super(ErrorCode.SUBSCRIPTION_REQUIRED, `This feature requires the ${requiredTier} plan`)
   }
 }
 
 export class TierLimitReachedError extends AppError {
   constructor(resource: string, limit: number) {
-    super(
-      ErrorCode.TIER_LIMIT_REACHED,
-      `${resource} limit of ${limit} reached for your current plan`
-    )
+    super(ErrorCode.TIER_LIMIT_REACHED, `${resource} limit of ${limit} reached for your current plan`)
   }
 }
 
 export class RateLimitedError extends AppError {
   constructor(retryAfterSec: number) {
-    super(
-      ErrorCode.RATE_LIMITED,
-      `Rate limit exceeded. Retry after ${retryAfterSec} seconds`
-    )
+    super(ErrorCode.RATE_LIMITED, `Rate limit exceeded. Retry after ${retryAfterSec} seconds`)
   }
 }
 
 export class ServiceUnavailableError extends AppError {
   constructor(serviceName: string) {
-    super(
-      ErrorCode.SERVICE_UNAVAILABLE,
-      `${serviceName} is temporarily unavailable`
-    )
+    super(ErrorCode.SERVICE_UNAVAILABLE, `${serviceName} is temporarily unavailable`)
   }
 }
 
 export class ExternalApiError extends AppError {
   constructor(provider: string, details?: string) {
-    super(
-      ErrorCode.EXTERNAL_API_ERROR,
-      `External API error from ${provider}${details !== undefined ? `: ${details}` : ""}`,
-    )
+    super(ErrorCode.EXTERNAL_API_ERROR, `External API error from ${provider}${details !== undefined ? `: ${details}` : ""}`)
   }
 }

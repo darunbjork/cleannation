@@ -1,0 +1,66 @@
+// services/auth-service/prisma/schema.prisma
+// auth-service owns ONLY users and refresh tokens.
+// No other service's data lives here.
+// This is the microservices database-per-service contract.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("AUTH_DATABASE_URL")
+}
+
+model User {
+  id             String    @id @default(cuid())
+  email          String    @unique
+  username       String    @unique
+  displayName    String
+  avatarUrl      String?
+  passwordHash   String
+  // Role stored in DB — JWT payload is derived from this at login time.
+  // If role changes in DB, the change takes effect on next token refresh.
+  role           UserRole  @default(VOLUNTEER)
+  organizationId String?
+  isVerified     Boolean   @default(false)
+  isBanned       Boolean   @default(false)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  refreshTokens  RefreshToken[]
+
+  @@index([email])
+  @@index([username])
+}
+
+model RefreshToken {
+  id          String    @id @default(cuid())
+  // Store hash of token — never the plaintext token itself.
+  // If the DB is leaked, the plaintext tokens are not exposed.
+  tokenHash   String    @unique
+  userId      String
+  // jti (JWT ID) claim — used for Redis blocklist lookup
+  jti         String    @unique
+  expiresAt   DateTime
+  // Track which device/client issued this token
+  userAgent   String?
+  ipAddress   String?
+  createdAt   DateTime  @default(now())
+  revokedAt   DateTime? // null = active, non-null = revoked
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([tokenHash])
+  @@index([jti])
+  // Compound index — the most common query: find active tokens for a user
+  @@index([userId, revokedAt])
+}
+
+enum UserRole {
+  VOLUNTEER
+  ORGANIZER
+  ORG_ADMIN
+  PLATFORM_ADMIN
+}

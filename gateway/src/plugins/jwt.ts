@@ -1,6 +1,6 @@
 import fp from "fastify-plugin"
-import jwt from "@fastify/jwt"
-import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify"
+import jwt, { type FastifyJWTOptions } from "@fastify/jwt"
+import type { FastifyInstance, FastifyRequest, FastifyReply, FastifyPluginAsync } from "fastify"
 import {
   UnauthorizedError,
   ForbiddenError,
@@ -10,26 +10,8 @@ import {
 import type { JwtPayload, UserRole } from "@cleannation/shared-types"
 import { config } from "../config/index"
 
-declare module "fastify" {
-  interface FastifyInstance {
-    authenticate: (
-      request: FastifyRequest,
-      reply: FastifyReply
-    ) => Promise<void>
-    authorize: (
-      roles: UserRole[]
-    ) => (request: FastifyRequest, reply: FastifyReply) => Promise<void>
-  }
-}
-
-// Extend FastifyRequest specifically for this plugin to avoid type collision
-// We need to use FastifyRequestWithUser in handlers
-interface FastifyRequestWithUser extends FastifyRequest {
-  user: JwtPayload
-}
-
 export default fp(async function jwtPlugin(fastify: FastifyInstance) {
-  await fastify.register(jwt, {
+  await fastify.register(jwt as unknown as FastifyPluginAsync<FastifyJWTOptions>, {
     secret: {
       public: config.jwt.publicKey,
     },
@@ -45,7 +27,9 @@ export default fp(async function jwtPlugin(fastify: FastifyInstance) {
       _reply: FastifyReply
     ): Promise<void> {
       const authHeader = request.headers.authorization
-      const cookieToken = request.cookies?.["access_token"]
+      // Explicitly type the cookies to satisfy TS despite augmentation
+      const cookies = request.cookies as Record<string, string>
+      const cookieToken = cookies?.["access_token"]
 
       const token = authHeader?.startsWith("Bearer ")
         ? authHeader.slice(7)
@@ -57,8 +41,7 @@ export default fp(async function jwtPlugin(fastify: FastifyInstance) {
 
       try {
         const payload = fastify.jwt.verify<JwtPayload>(token)
-        // Cast to our interface
-        ;(request as FastifyRequestWithUser).user = payload
+        request.user = payload
       } catch (error: unknown) {
         if (
           error instanceof Error &&
@@ -78,8 +61,7 @@ export default fp(async function jwtPlugin(fastify: FastifyInstance) {
         request: FastifyRequest,
         _reply: FastifyReply
       ): Promise<void> {
-        const user = (request as FastifyRequestWithUser).user
-        if (!roles.includes(user.role)) {
+        if (!roles.includes(request.user.role)) {
           throw new ForbiddenError(
             `This action requires one of: ${roles.join(", ")}`
           )

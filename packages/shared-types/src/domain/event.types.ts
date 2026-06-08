@@ -1,13 +1,9 @@
-// packages/shared-types/src/domain/event.types.ts
-// Cleanup event domain types.
-// event-service owns these records.
-
 export type EventStatus =
-  | "draft"       // created, not yet published
-  | "published"   // visible, accepting registrations
-  | "active"      // event day — GPS check-in enabled
-  | "completed"   // finished — photo verification phase
-  | "verified"    // all photos verified — points awarded
+  | "draft"
+  | "published"
+  | "active"
+  | "completed"
+  | "verified"
   | "cancelled"
 
 export type EventCategory =
@@ -30,16 +26,15 @@ export interface CleanupEvent {
   organizationId: string | null
   maxParticipants: number
   currentParticipants: number
-  scheduledAt: string       // ISO 8601
+  scheduledAt: string
   estimatedDurationMin: number
-  locationId: string        // foreign key → location-service
-  mediaIds: string[]        // foreign keys → media-service
-  pointsReward: number      // awarded to volunteers on completion
+  locationId: string
+  mediaIds: string[]
+  pointsReward: number
   createdAt: string
   updatedAt: string
 }
 
-// Shape returned to volunteers browsing events
 export type EventSummary = Pick<
   CleanupEvent,
   | "id"

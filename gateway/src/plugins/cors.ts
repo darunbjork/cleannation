@@ -1,10 +1,10 @@
 import fp from "fastify-plugin"
-import cors from "@fastify/cors"
-import type { FastifyInstance } from "fastify"
+import cors, { type FastifyCorsOptions } from "@fastify/cors"
+import type { FastifyInstance, FastifyPluginAsync } from "fastify"
 import { config } from "../config/index"
 
 export default fp(async function corsPlugin(fastify: FastifyInstance) {
-  await fastify.register(cors, {
+  await fastify.register(cors as unknown as FastifyPluginAsync<FastifyCorsOptions>, {
     origin: config.cors.origin.split(",").map((o) => o.trim()),
     credentials: config.cors.credentials,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],

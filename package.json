@@ -1,0 +1,37 @@
+{
+  "name": "cleannation",
+  "private": true,
+  "packageManager": "bun@1.3.6",
+  "workspaces": [
+    "services/*",
+    "packages/*",
+    "gateway"
+  ],
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "type-check": "turbo run type-check",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.2",
+    "prisma": "^7.8.0",
+    "turbo": "^2.0.0",
+    "typescript": "^6.0.3"
+  },
+  "dependencies": {
+    "@fastify/cookie": "^11.0.2",
+    "@fastify/cors": "^11.2.0",
+    "@fastify/helmet": "^13.0.2",
+    "@fastify/jwt": "^10.1.0",
+    "@fastify/rate-limit": "^10.3.0",
+    "@prisma/client": "^7.8.0",
+    "argon2": "^0.44.0",
+    "fastify": "^5.8.5",
+    "ioredis": "^5.11.1"
+  }
+}

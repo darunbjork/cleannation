@@ -12,17 +12,17 @@
   "dependencies": {
     "@cleannation/shared-types": "file:../packages/shared-types",
     "@cleannation/shared-utils": "file:../packages/shared-utils",
-    "@fastify/cookie": "^9.0.0",
-    "@fastify/cors": "^9.0.0",
-    "@fastify/helmet": "^11.0.0",
-    "@fastify/http-proxy": "^9.0.0",
-    "@fastify/jwt": "^8.0.0",
-    "@fastify/rate-limit": "^9.0.0",
-    "@fastify/websocket": "^10.0.0",
-    "fastify": "^4.28.0"
+    "@fastify/cookie": "^11.0.2",
+    "@fastify/cors": "^11.2.0",
+    "@fastify/helmet": "^13.0.2",
+    "@fastify/http-proxy": "^11.5.0",
+    "@fastify/jwt": "^10.1.0",
+    "@fastify/rate-limit": "^10.3.0",
+    "@fastify/websocket": "^11.2.0",
+    "fastify": "^5.8.5"
   },
   "devDependencies": {
-    "@types/node": "^20.0.0",
-    "typescript": "^5.4.0"
+    "@types/node": "^25.9.1",
+    "typescript": "^6.0.3"
   }
 }
