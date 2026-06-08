@@ -61,7 +61,7 @@ export default fp(async function jwtPlugin(fastify: FastifyInstance) {
         request: FastifyRequest,
         _reply: FastifyReply
       ): Promise<void> {
-        if (!roles.includes(request.user.role)) {
+        if (!roles.includes((request.user as JwtPayload).role)) {
           throw new ForbiddenError(
             `This action requires one of: ${roles.join(", ")}`
           )

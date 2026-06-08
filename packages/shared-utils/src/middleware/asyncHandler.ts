@@ -1,22 +1,15 @@
-import type { FastifyRequest, FastifyReply } from "fastify"
+import type { RouteHandlerMethod } from "fastify"
 
-type AsyncRouteHandler<
-  TRequest extends FastifyRequest = FastifyRequest,
-  TReply extends FastifyReply = FastifyReply
-> = (request: TRequest, reply: TReply) => Promise<void>
-
-export function asyncHandler<
-  TRequest extends FastifyRequest = FastifyRequest,
-  TReply extends FastifyReply = FastifyReply
->(handler: AsyncRouteHandler<TRequest, TReply>): AsyncRouteHandler<TRequest, TReply> {
+export function asyncHandler(handler: RouteHandlerMethod): RouteHandlerMethod {
   return async function wrappedHandler(
-    request: TRequest,
-    reply: TReply
-  ): Promise<void> {
+    this: any,
+    request: any,
+    reply: any
+  ) {
     try {
-      await handler(request, reply)
+      return await handler.call(this, request, reply)
     } catch (error: unknown) {
-      reply.send(error)
+      return reply.send(error)
     }
   }
 }

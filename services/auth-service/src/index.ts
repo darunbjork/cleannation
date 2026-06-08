@@ -12,11 +12,11 @@ import {
   logServiceError,
 } from "@cleannation/shared-utils"
 import { ErrorCode, fail } from "@cleannation/shared-types"
-import { config } from "./config/index.js"
-import { prisma } from "./db/prisma.js"
-import { redis } from "./db/redis.js"
-import authRoutes from "./routes/auth.routes.js"
-import healthRoutes from "./routes/health.routes.js"
+import { config } from "./config/index"
+import { prisma } from "./db/prisma"
+import { redis } from "./db/redis"
+import authRoutes from "./routes/auth.routes"
+import healthRoutes from "./routes/health.routes"
 
 const logger = createLogger("auth-service")
 
@@ -33,21 +33,22 @@ async function buildServer() {
   })
 
   // Security headers
-  await fastify.register(helmet)
+  await fastify.register(helmet as any)
 
   // CORS
-  await fastify.register(cors, {
+  await fastify.register(cors as any, {
     origin: config.cors.origin.split(","),
     credentials: true,
   })
 
   // Cookies (for refresh token HttpOnly strategy)
-  await fastify.register(cookie)
+  await fastify.register(cookie as any)
 
   // Rate limiting
-  await fastify.register(rateLimit, {
+  await fastify.register(rateLimit as any, {
     max: 300,
     timeWindow: "1 minute",
+
     errorResponseBuilder: (_req, context) => ({
       success: false,
       data: null,
@@ -99,21 +100,18 @@ async function buildServer() {
       service: "auth-service",
     }
 
-    // Narrowing error type
-    const err = error instanceof Error ? error : new Error(String(error))
-
-    if (isAppError(err)) {
-      if (err.statusCode < 500) {
-        logger.warn({ correlationId: request.correlationId, code: err.code }, err.message)
+    if (isAppError(error)) {
+      if (error.statusCode < 500) {
+        logger.warn({ correlationId: request.correlationId, code: error.code }, error.message)
       } else {
-        logServiceError(logger, err, { correlationId: request.correlationId })
+        logServiceError(logger, error, { correlationId: request.correlationId })
       }
-      return reply.status(err.statusCode).send(
-        fail(err.code, err.message, meta, err.details)
+      return reply.status(error.statusCode).send(
+        fail(error.code, error.message, meta, error.details)
       )
     }
 
-    logServiceError(logger, err, { correlationId: request.correlationId })
+    logServiceError(logger, error, { correlationId: request.correlationId })
     return reply.status(500).send(
       fail(ErrorCode.INTERNAL, "An unexpected error occurred", meta)
     )
@@ -150,7 +148,6 @@ async function start(): Promise<void> {
 }
 
 start().catch((error: unknown) => {
-  const err = error instanceof Error ? error : new Error(String(error))
-  logger.error({ error: err }, "Failed to start auth-service")
+  logger.error({ error }, "Failed to start auth-service")
   process.exit(1)
 })

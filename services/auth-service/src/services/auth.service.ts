@@ -10,7 +10,6 @@ import {
   InvalidCredentialsError,
   UnauthorizedError,
   createLogger,
-  logServiceError,
 } from "@cleannation/shared-utils"
 import { config } from "../config/index"
 import { UserRepository } from "../repositories/user.repository"
@@ -89,10 +88,10 @@ export class AuthService {
     )
 
     // Issue token pair immediately after registration
-    return this.issueTokenPair(user, {
-      userAgent: input.userAgent,
-      ipAddress: input.ipAddress,
-    })
+    const meta: { userAgent?: string; ipAddress?: string } = {};
+    if (input.userAgent) meta.userAgent = input.userAgent;
+    if (input.ipAddress) meta.ipAddress = input.ipAddress;
+    return this.issueTokenPair(user, meta);
   }
 
   async login(input: {
@@ -137,10 +136,10 @@ export class AuthService {
       logger.info({ userId: user.id }, "Password hash upgraded")
     }
 
-    return this.issueTokenPair(user, {
-      userAgent: input.userAgent,
-      ipAddress: input.ipAddress,
-    })
+    const meta: { userAgent?: string; ipAddress?: string } = {};
+    if (input.userAgent) meta.userAgent = input.userAgent;
+    if (input.ipAddress) meta.ipAddress = input.ipAddress;
+    return this.issueTokenPair(user, meta);
   }
 
   async refresh(input: {
@@ -198,10 +197,10 @@ export class AuthService {
 
     logger.info({ userId: user.id }, "Token refreshed")
 
-    return this.issueTokenPair(user, {
-      userAgent: input.userAgent,
-      ipAddress: input.ipAddress,
-    })
+    const meta: { userAgent?: string; ipAddress?: string } = {};
+    if (input.userAgent) meta.userAgent = input.userAgent;
+    if (input.ipAddress) meta.ipAddress = input.ipAddress;
+    return this.issueTokenPair(user, meta);
   }
 
   async logout(input: { refreshTokenPlaintext: string }): Promise<void> {

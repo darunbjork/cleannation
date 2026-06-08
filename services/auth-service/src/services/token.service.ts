@@ -24,7 +24,7 @@
 // presence in the database. DB records can be instantly revoked.
 
 import crypto from "node:crypto"
-import { createSigner, createVerifier } from "fast-jwt"
+import { createSigner } from "fast-jwt"
 import { config } from "../config/index"
 import { redis } from "../db/redis"
 import type { JwtPayload, UserRole } from "@cleannation/shared-types"
@@ -34,14 +34,14 @@ import type { JwtPayload, UserRole } from "@cleannation/shared-types"
 // because token service is called outside of Fastify's request context
 
 export class TokenService {
-  private readonly signSync: ReturnType<typeof createSigner>
+  private readonly signSync: (payload: object) => string
 
   constructor() {
     this.signSync = createSigner({
       algorithm: config.jwt.algorithm,
       key: config.jwt.privateKey,
       expiresIn: config.jwt.accessTokenExpiry,
-    })
+    }) as (payload: object) => string
   }
 
   // Issues a new RS256-signed access token
@@ -59,7 +59,7 @@ export class TokenService {
     }
 
     // signSync is safe here — fast-jwt's RS256 is CPU-bound but fast
-    return this.signSync(jwtPayload) as string
+    return this.signSync(jwtPayload)
   }
 
   // Generates a cryptographically random refresh token

@@ -1,5 +1,3 @@
-// services/auth-service/src/config/index.ts
-
 import {
   requireEnv,
   requireEnvInt,

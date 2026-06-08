@@ -11,7 +11,7 @@ services:
       POSTGRES_PASSWORD: password
       POSTGRES_DB: auth_db
     ports:
-      - "5432:5432"
+      - "5439:5432"
     volumes:
       - postgres_auth_data:/var/lib/postgresql/data
     healthcheck:

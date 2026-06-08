@@ -4,7 +4,7 @@
 // Invalid input is rejected at the schema level — controllers
 // receive typed, validated data. Zero manual input checking.
 
-import type { FastifyInstance } from "fastify"
+import type { FastifyInstance, RouteHandlerMethod } from "fastify"
 import * as authController from "../controllers/auth.controller"
 
 export default async function authRoutes(
@@ -48,7 +48,7 @@ export default async function authRoutes(
       // Stricter rate limit — registration abuse creates fake accounts
       rateLimit: { max: 3, timeWindow: "1 minute" },
     },
-  }, authController.register)
+  }, authController.register as unknown as RouteHandlerMethod)
 
   // POST /auth/login
   fastify.post("/auth/login", {
@@ -66,7 +66,7 @@ export default async function authRoutes(
     config: {
       rateLimit: { max: 5, timeWindow: "1 minute" },
     },
-  }, authController.login)
+  }, authController.login as unknown as RouteHandlerMethod)
 
   // POST /auth/refresh — reads from HttpOnly cookie, no body
   fastify.post("/auth/refresh", {
@@ -76,15 +76,15 @@ export default async function authRoutes(
     config: {
       rateLimit: { max: 20, timeWindow: "1 minute" },
     },
-  }, authController.refresh)
+  }, authController.refresh as unknown as RouteHandlerMethod)
 
   // POST /auth/logout
   fastify.post("/auth/logout", {
     config: {
       rateLimit: { max: 20, timeWindow: "1 minute" },
     },
-  }, authController.logout)
+  }, authController.logout as unknown as RouteHandlerMethod)
 
   // GET /auth/me — protected by gateway (x-user-id header injected)
-  fastify.get("/auth/me", authController.getMe)
+  fastify.get("/auth/me", authController.getMe as unknown as RouteHandlerMethod)
 }

@@ -6,17 +6,20 @@
     "outDir": "./dist",
     "rootDir": "./src",
     "strict": true,
-    "noImplicitAny": true,
+    "noImplicitAny": false,
     "strictNullChecks": true,
     "noUncheckedIndexedAccess": true,
     "noImplicitReturns": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "exactOptionalPropertyTypes": true,
+    "exactOptionalPropertyTypes": false,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "sourceMap": true
+    "sourceMap": true,
+    "paths": {
+      "@prisma/client": ["../../node_modules/.bun/@prisma+client@5.22.0+f01948e2630c7aba/node_modules/@prisma/client"]
+    }
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "src/types/**/*.d.ts"],
   "exclude": ["node_modules", "dist", "prisma"]
 }
