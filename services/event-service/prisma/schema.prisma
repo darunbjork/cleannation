@@ -1,0 +1,92 @@
+// services/event-service/prisma/schema.prisma
+// event-service owns events and registrations ONLY.
+// It stores userId and locationId as plain strings —
+// it never JOINs to the user or location databases.
+// Cross-service data is fetched via GraphQL resolvers calling
+// the respective services, or via the Kafka event log.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("EVENT_DATABASE_URL")
+}
+
+model CleanupEvent {
+  id                   String        @id @default(cuid())
+  title                String
+  description          String        @db.Text
+  category             EventCategory
+  status               EventStatus   @default(DRAFT)
+
+  // Foreign keys to other services — stored as strings, never JOINed
+  organizerId          String
+  organizationId       String?
+
+  maxParticipants      Int
+  currentParticipants  Int           @default(0)
+  scheduledAt          DateTime
+  estimatedDurationMin Int
+  locationId           String        // → location-service
+  pointsReward         Int           @default(100)
+
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+  deletedAt            DateTime?     // soft delete — never hard delete events
+
+  registrations        Registration[]
+
+  // Compound indexes match our most common query patterns
+  @@index([organizerId, status])
+  @@index([status, scheduledAt])
+  @@index([locationId])
+  // Partial index — only non-deleted events in the main browse query
+  @@index([status, scheduledAt, deletedAt])
+}
+
+model Registration {
+  id           String             @id @default(cuid())
+  eventId      String
+  userId       String
+  status       RegistrationStatus @default(REGISTERED)
+  registeredAt DateTime           @default(now())
+  checkedInAt  DateTime?
+  checkedOutAt DateTime?
+
+  event        CleanupEvent @relation(fields: [eventId], references: [id])
+
+  // A user can only register once per event
+  @@unique([eventId, userId])
+  @@index([userId, status])
+  @@index([eventId, status])
+}
+
+enum EventStatus {
+  DRAFT
+  PUBLISHED
+  ACTIVE
+  COMPLETED
+  VERIFIED
+  CANCELLED
+}
+
+enum EventCategory {
+  BEACH
+  PARK
+  URBAN_STREET
+  FOREST
+  RIVER
+  HIGHWAY
+  NEIGHBORHOOD
+  OTHER
+}
+
+enum RegistrationStatus {
+  REGISTERED
+  CHECKED_IN
+  COMPLETED
+  NO_SHOW
+  CANCELLED
+}
