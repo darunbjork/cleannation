@@ -1,5 +1,3 @@
-// services/location-service/src/services/zone.service.ts
-
 import { NotFoundError, createLogger } from "@cleannation/shared-utils"
 import { ZoneRepository } from "../repositories/zone.repository"
 

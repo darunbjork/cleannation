@@ -1,6 +1,3 @@
-// services/location-service/src/repositories/zone.repository.ts
-// PostGIS spatial queries — raw SQL required.
-
 import { prisma } from "../db/prisma"
 import { createLogger } from "@cleannation/shared-utils"
 
@@ -17,6 +14,7 @@ export interface ZoneRow {
   eventId: string | null
   createdAt: Date
   updatedAt: Date
+  // Computed by PostGIS — distance from query point in metres
   distanceMeters?: number
   centerLat?: number
   centerLng?: number
@@ -39,12 +37,16 @@ export class ZoneRepository {
     return results[0] ?? null
   }
 
+  // Find zones within radiusMeters of a given coordinate
+  // This is the core spatial query — must use PostGIS index
   async findNearby(
     lat: number,
     lng: number,
     radiusMeters: number,
     limit = 20
   ): Promise<ZoneRow[]> {
+    // ST_DWithin on geography columns measures in metres
+    // The spatial index makes this O(log n) at any dataset size
     return prisma.$queryRaw<ZoneRow[]>`
       SELECT
         id, name, description, "radiusMeters",
@@ -67,6 +69,8 @@ export class ZoneRepository {
     `
   }
 
+  // Check if a point is within a zone's boundary
+  // Used for check-in validation and zone-exit alerts
   async isPointInZone(
     zoneId: string,
     lat: number,
@@ -95,6 +99,8 @@ export class ZoneRepository {
     city: string
     eventId?: string
   }): Promise<ZoneRow> {
+    // Insert with PostGIS point creation
+    // ST_SetSRID(ST_MakePoint(lng, lat), 4326) creates a WGS84 geography point
     const results = await prisma.$queryRaw<ZoneRow[]>`
       INSERT INTO "CleanupZone" (
         id, name, description, center, "radiusMeters",
@@ -135,6 +141,7 @@ export class ZoneRepository {
     page: number
     limit: number
   }): Promise<{ zones: ZoneRow[]; total: number }> {
+    // Build dynamic WHERE clause
     const conditions: string[] = []
     if (filters.country !== undefined) {
       conditions.push(`country = '${filters.country}'`)

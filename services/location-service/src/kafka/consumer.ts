@@ -1,7 +1,3 @@
-// services/location-service/src/kafka/consumer.ts
-// Kafka consumer — listens for event.created to auto-create
-// a tracking zone when an organizer creates a cleanup event.
-
 import { Kafka, type Consumer } from "kafkajs"
 import { createLogger, logKafkaEvent } from "@cleannation/shared-utils"
 import {
@@ -35,7 +31,7 @@ export async function startConsumer(): Promise<void> {
   await consumer.run({
     // eachMessage: processes one message at a time.
     // For location-service, ordering matters — process sequentially.
-    eachMessage: async ({ topic, message }: { topic: string, message: any }) => {
+    eachMessage: async ({ topic, message }) => {
       if (message.value === null) return
 
       try {
@@ -59,6 +55,8 @@ export async function startConsumer(): Promise<void> {
           },
           "Failed to process Kafka message"
         )
+        // Do not throw — Kafka will not retry on processing errors.
+        // Failed events should be sent to a dead-letter queue (future enhancement).
       }
     },
   })
@@ -75,6 +73,10 @@ export async function stopConsumer(): Promise<void> {
 async function handleEventCreated(
   payload: EventCreatedPayload
 ): Promise<void> {
+  // When an event is created with a locationId, we verify the zone exists.
+  // If it doesn't (e.g., organizer typed a placeholder ID), log a warning.
+  // In production, we could auto-create a default zone here.
+
   logger.info(
     { eventId: payload.eventId, locationId: payload.locationId },
     "Processing event.created — verifying zone"

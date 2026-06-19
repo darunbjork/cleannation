@@ -1,5 +1,3 @@
-// services/location-service/src/routes/zone.routes.ts
-
 import type { FastifyInstance } from "fastify"
 import * as zoneController from "../controllers/zone.controller"
 
@@ -15,7 +13,7 @@ export default async function zoneRoutes(
         properties: { id: { type: "string" } },
       },
     },
-  }, zoneController.getZone as any)
+  }, zoneController.getZone)
 
   // Find zones near a coordinate — the core map query
   fastify.get("/locations/zones/nearby", {
@@ -30,10 +28,10 @@ export default async function zoneRoutes(
         },
       },
     },
-  }, zoneController.findNearbyZones as any)
+  }, zoneController.findNearbyZones)
 
   // List zones with filters
-  fastify.get("/locations/zones", zoneController.listZones as any)
+  fastify.get("/locations/zones", zoneController.listZones)
 
   // Create a zone — organizer+ only
   fastify.post("/locations/zones", {
@@ -56,5 +54,5 @@ export default async function zoneRoutes(
       },
     },
     config: { rateLimit: { max: 10, timeWindow: "1 minute" } },
-  }, zoneController.createZone as any)
+  }, zoneController.createZone)
 }

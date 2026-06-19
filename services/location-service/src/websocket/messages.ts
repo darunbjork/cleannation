@@ -1,8 +1,3 @@
-// services/location-service/src/websocket/messages.ts
-// Typed WebSocket message contracts.
-
-// ── INBOUND (client → server) ──────────────────────────────────────────
-
 export type InboundMessage =
   | JoinRoomMessage
   | LeaveRoomMessage
@@ -24,7 +19,7 @@ export interface PositionUpdateMessage {
   eventId: string
   lat: number
   lng: number
-  accuracy: number    // GPS accuracy in metres
+  accuracy: number    // GPS accuracy in metres — filter out low-accuracy updates
 }
 
 export interface PingMessage {
@@ -46,6 +41,7 @@ export interface RoomJoinedMessage {
   type: "room_joined"
   eventId: string
   participantCount: number
+  // Current positions of all participants already in the room
   currentPositions: ParticipantPosition[]
 }
 
@@ -99,6 +95,9 @@ export interface ParticipantPosition {
 }
 
 // ── RUNTIME PARSER ─────────────────────────────────────────────────────
+// Parses raw WebSocket string data into typed messages.
+// Returns null for invalid messages — never throws.
+// Invalid messages are silently dropped (logged, not crashed).
 
 export function parseInboundMessage(
   raw: string
@@ -135,6 +134,7 @@ export function parseInboundMessage(
         ) {
           return null
         }
+        // Validate coordinate ranges
         if (
           msg["lat"] < -90 || msg["lat"] > 90 ||
           msg["lng"] < -180 || msg["lng"] > 180
@@ -156,6 +156,7 @@ export function parseInboundMessage(
         return null
     }
   } catch {
+    // JSON.parse failed — malformed message
     return null
   }
 }

@@ -1,7 +1,7 @@
-// services/location-service/src/db/prisma.ts
-// Singleton Prisma client for location-service.
-
 import { PrismaClient } from "@prisma/client"
+import { createLogger } from "@cleannation/shared-utils"
+
+const logger = createLogger("location-service")
 
 const prisma = new PrismaClient({
   log:

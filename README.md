@@ -37,6 +37,8 @@ $0.00 local development. See ARCHITECTURE.md for production cost estimate.
 - Created `.env` file for `event-service` with correct local ports (database port 5433, Kafka port 19092).<br>
 - Created `.env` file for `location-service` with correct local ports (database port 5434, Kafka port 19092).<br>
 - Created `.env` file for `gateway` with correct local microservice routing URLs and JWT public key.<br>
+- Created `.env` files for the remaining services (`gamification-service`, `media-service`, `notification-service`, `payment-service`) mapping databases and event bus ports correctly.<br>
+
 
 
 

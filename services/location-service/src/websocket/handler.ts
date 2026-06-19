@@ -1,6 +1,3 @@
-// services/location-service/src/websocket/handler.ts
-// WebSocket connection handler.
-
 import type { WebSocket } from "ws"
 import type { FastifyRequest } from "fastify"
 import { createLogger } from "@cleannation/shared-utils"
@@ -14,15 +11,12 @@ import { config } from "../config/index"
 
 const logger = createLogger("location-service")
 
-// Track which rooms each socket has joined
-// Needed for cleanup on disconnect
 const socketRooms = new WeakMap<WebSocket, Set<string>>()
 
 export function handleWebSocketConnection(
   socket: WebSocket,
   request: FastifyRequest
 ): void {
-  // Extract userId from request headers (injected by gateway)
   const userId = request.headers["x-user-id"]
 
   if (typeof userId !== "string" || userId === "") {
@@ -49,10 +43,14 @@ export function handleWebSocketConnection(
   socketRooms.set(socket, joinedRooms)
 
   // ── PING/PONG KEEPALIVE ──────────────────────────────────────────────
+  // Detects dead connections (participant loses signal without
+  // sending a close frame — common with mobile GPS tracking).
+  // If pong is not received within pongTimeoutMs, close the socket.
+
   let pongTimeout: ReturnType<typeof setTimeout> | null = null
 
   const pingInterval = setInterval(() => {
-    if (socket.readyState !== 1) { // 1 = OPEN
+    if (socket.readyState !== 1) {
       clearInterval(pingInterval)
       return
     }
@@ -86,6 +84,7 @@ export function handleWebSocketConnection(
     }
 
     switch (message.type) {
+
       case "ping": {
         const pong: OutboundMessage = {
           type: "pong",
@@ -167,7 +166,8 @@ export function handleWebSocketConnection(
       case "position_update": {
         const { eventId, lat, lng, accuracy } = message
 
-        // Drop low-accuracy readings
+        // Drop low-accuracy readings — GPS inside buildings can be 200m+ off
+        // Threshold: 50m accuracy. Configurable in future.
         if (accuracy > 50) {
           logger.info(
             { userId, eventId, accuracy },
@@ -177,6 +177,10 @@ export function handleWebSocketConnection(
         }
 
         roomManager.updatePosition(eventId, userId, lat, lng, accuracy)
+
+        // NOTE: Zone boundary check is a future enhancement
+        // (Step 9 — requires spatial query against cleanup zone)
+        // Placeholder: in production, check ST_DWithin here
         break
       }
     }
@@ -208,5 +212,6 @@ export function handleWebSocketConnection(
 
   socket.on("error", (error: Error) => {
     logger.error({ userId, error: error.message }, "WebSocket error")
+    // Socket will also emit 'close' after error — cleanup happens there
   })
 }

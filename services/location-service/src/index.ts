@@ -31,20 +31,26 @@ declare module "fastify" {
 async function buildServer() {
   const fastify = Fastify({ logger: false })
 
-  await fastify.register(helmet as any)
-  await fastify.register(cors as any, {
+  await fastify.register(helmet)
+  await fastify.register(cors, {
     origin: config.cors.origin.split(","),
     credentials: true,
   })
-  await fastify.register(rateLimit as any, {
+  await fastify.register(rateLimit, {
     max: 300,
     timeWindow: "1 minute",
   })
 
   // WebSocket plugin — enables ws:// upgrade on specific routes
-  await fastify.register(websocketPlugin as any)
+  await fastify.register(websocketPlugin, {
+    options: {
+      // Maximum message size: 10KB — position updates are tiny
+      // Prevents memory exhaustion from malicious large messages
+      maxPayload: 10_240,
+    },
+  })
 
-  // Correlation ID on every request
+  // Correlation ID
   fastify.addHook("onRequest", async (request, reply) => {
     request.correlationId = resolveCorrelationId(
       request.headers as Record<string, string | undefined>
@@ -86,11 +92,14 @@ async function buildServer() {
   })
 
   // ── WEBSOCKET ROUTE ────────────────────────────────────────────────────
+  // GET /ws/tracking — upgrades to WebSocket connection
+  // The gateway forwards this route to location-service
+  // userId is injected by the gateway as a header
   fastify.get(
     "/ws/tracking",
-    { websocket: true } as any,
+    { websocket: true },
     (socket, request) => {
-      handleWebSocketConnection(socket as any, request as any)
+      handleWebSocketConnection(socket, request)
     }
   )
 
@@ -98,7 +107,7 @@ async function buildServer() {
   await fastify.register(healthRoutes)
   await fastify.register(zoneRoutes)
 
-  // WebSocket stats endpoint
+  // WebSocket stats endpoint — for monitoring
   fastify.get("/ws/stats", async (_req, reply) => {
     return reply.status(200).send(roomManager.getStats())
   })

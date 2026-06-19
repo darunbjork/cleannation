@@ -1,49 +1,56 @@
-// services/location-service/src/controllers/zone.controller.ts
-
 import type { FastifyRequest, FastifyReply } from "fastify"
-import { asyncHandler, type RouteHandler, type MinimalFastifyInstance } from "@cleannation/shared-utils"
+import { asyncHandler } from "@cleannation/shared-utils"
 import { ok } from "@cleannation/shared-types"
 import { ZoneService } from "../services/zone.service"
-import { config } from "../config/index"
 
 const zoneService = new ZoneService()
 
 function getMeta(request: FastifyRequest) {
   return {
-    requestId: (request as unknown as { correlationId: string }).correlationId ?? "unknown",
+    requestId: (request.headers["x-correlation-id"] as string) ?? "unknown",
     service: "location-service",
   }
 }
 
-export const getZone: RouteHandler = asyncHandler(async function (this: MinimalFastifyInstance, request: FastifyRequest, reply: FastifyReply) {
-  const params = request.params as { id: string }
-  const zone = await zoneService.getById(params.id)
+export const getZone = asyncHandler(async (
+  request: FastifyRequest<{ Params: { id: string } }>,
+  reply: FastifyReply
+) => {
+  const zone = await zoneService.getById(request.params.id)
   return reply.status(200).send(ok(zone, getMeta(request)))
 })
 
-export const findNearbyZones: RouteHandler = asyncHandler(async function (this: MinimalFastifyInstance, request: FastifyRequest, reply: FastifyReply) {
-  const query = request.query as {
-    lat: number
-    lng: number
-    radiusMeters?: number
-  }
-  const { lat, lng, radiusMeters = 10_000 } = query
+export const findNearbyZones = asyncHandler(async (
+  request: FastifyRequest<{
+    Querystring: {
+      lat: number
+      lng: number
+      radiusMeters?: number
+    }
+  }>,
+  reply: FastifyReply
+) => {
+  const { lat, lng, radiusMeters = 10_000 } = request.query
   const zones = await zoneService.findNearby(lat, lng, radiusMeters)
   return reply.status(200).send(ok(zones, getMeta(request)))
 })
 
-export const listZones: RouteHandler = asyncHandler(async function (this: MinimalFastifyInstance, request: FastifyRequest, reply: FastifyReply) {
-  const query = request.query as {
-    country?: string
-    region?: string
-    page?: number
-    limit?: number
-  }
+export const listZones = asyncHandler(async (
+  request: FastifyRequest<{
+    Querystring: {
+      country?: string
+      region?: string
+      page?: number
+      limit?: number
+    }
+  }>,
+  reply: FastifyReply
+) => {
   const result = await zoneService.list({
-    country: query.country,
-    region: query.region,
-    page: query.page ?? 1,
-    limit: query.limit ?? 20,
+    country: request.query.country,
+    region: request.query.region,
+    page: request.query.page ?? 1,
+    limit: request.query.limit ?? 20,
   })
 
   return reply.status(200).send({
@@ -54,26 +61,30 @@ export const listZones: RouteHandler = asyncHandler(async function (this: Minima
       ...getMeta(request),
       timestamp: new Date().toISOString(),
       pagination: {
-        page: query.page ?? 1,
-        limit: query.limit ?? 20,
+        page: request.query.page ?? 1,
+        limit: request.query.limit ?? 20,
         total: result.total,
       },
     },
   })
 })
 
-export const createZone: RouteHandler = asyncHandler(async function (this: MinimalFastifyInstance, request: FastifyRequest, reply: FastifyReply) {
-  const body = request.body as {
-    name: string
-    description: string
-    lat: number
-    lng: number
-    radiusMeters: number
-    country: string
-    region: string
-    city: string
-    eventId?: string
-  }
+export const createZone = asyncHandler(async (
+  request: FastifyRequest<{
+    Body: {
+      name: string
+      description: string
+      lat: number
+      lng: number
+      radiusMeters: number
+      country: string
+      region: string
+      city: string
+      eventId?: string
+    }
+  }>,
+  reply: FastifyReply
+) => {
   const role = request.headers["x-user-role"]
 
   // Only organizers and above can create zones
@@ -86,6 +97,6 @@ export const createZone: RouteHandler = asyncHandler(async function (this: Minim
     throw new ForbiddenError("Only organizers can create cleanup zones")
   }
 
-  const zone = await zoneService.create(body)
+  const zone = await zoneService.create(request.body)
   return reply.status(201).send(ok(zone, getMeta(request)))
 })
