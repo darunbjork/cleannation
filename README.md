@@ -30,3 +30,7 @@ docker compose up -d
 
 ## Monthly Cost
 $0.00 local development. See ARCHITECTURE.md for production cost estimate.
+
+## Development Steps
+- Staged and committed A Mustafa's initial uncommitted changes.<br>
+
