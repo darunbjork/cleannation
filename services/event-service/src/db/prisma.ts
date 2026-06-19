@@ -16,8 +16,7 @@ const prisma = new PrismaClient({
       : [{ level: "error", emit: "stdout" }],
 })
 
-if (process.env["NODE_ENV"] === "development") {
-  // @ts-expect-error — Prisma event typing
+if (process.env["NODE_ENV"] === "development") { 
   prisma.$on("query", (e: { query: string; duration: number }) => {
     if (e.duration > 100) {
       logger.warn({ query: e.query, durationMs: e.duration }, "Slow query")

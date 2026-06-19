@@ -6,12 +6,15 @@
 // the respective services, or via the Kafka event log.
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+  output          = "./node_modules/.prisma/client"
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("EVENT_DATABASE_URL")
+  provider   = "postgresql"
+  url        = env("EVENT_DATABASE_URL")
+  extensions = [postgis]
 }
 
 model CleanupEvent {

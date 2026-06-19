@@ -15,7 +15,10 @@
     "exactOptionalPropertyTypes": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "sourceMap": true
+    "sourceMap": true,
+    "paths": {
+      "@prisma/client": ["./prisma/node_modules/.prisma/client"]
+    }
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "prisma"]

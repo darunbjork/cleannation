@@ -34,7 +34,7 @@ export const eventResolvers = {
         page?: number
         limit?: number
       },
-      context: GraphQLContext
+      _context: GraphQLContext
     ) => {
       const page = args.page ?? 1
       const limit = Math.min(args.limit ?? 20, 100)

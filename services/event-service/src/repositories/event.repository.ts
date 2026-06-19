@@ -19,8 +19,8 @@ export class EventRepository {
   async findMany(filters: {
     status?: EventStatus
     category?: EventCategory
-    organizerId?: string
-    locationId?: string
+    organizerId?: string | undefined
+    locationId?: string | undefined
     page: number
     limit: number
   }): Promise<{ events: CleanupEvent[]; total: number }> {

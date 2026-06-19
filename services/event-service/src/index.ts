@@ -1,9 +1,9 @@
 // services/event-service/src/index.ts
 
-import Fastify from "fastify"
-import helmet from "@fastify/helmet"
-import cors from "@fastify/cors"
-import rateLimit from "@fastify/rate-limit"
+import Fastify, { type FastifyInstance, type FastifyPluginCallback } from "fastify"
+import helmet, { type FastifyHelmetOptions } from "@fastify/helmet"
+import cors, { type FastifyCorsOptions } from "@fastify/cors"
+import rateLimit, { type RateLimitPluginOptions } from "@fastify/rate-limit"
 import { ApolloServer } from "@apollo/server"
 import { fastifyApolloDrainPlugin, fastifyApolloHandler } from "@as-integrations/fastify"
 import {
@@ -31,14 +31,14 @@ declare module "fastify" {
 }
 
 async function buildServer() {
-  const fastify = Fastify({ logger: false })
+  const fastify: FastifyInstance = Fastify({ logger: false })
 
-  await fastify.register(helmet)
-  await fastify.register(cors, {
+  await fastify.register(helmet as unknown as FastifyPluginCallback<FastifyHelmetOptions>, {})
+  await fastify.register(cors as unknown as FastifyPluginCallback<FastifyCorsOptions>, {
     origin: config.cors.origin.split(","),
     credentials: true,
   })
-  await fastify.register(rateLimit, {
+  await fastify.register(rateLimit as unknown as FastifyPluginCallback<RateLimitPluginOptions>, {
     max: 300,
     timeWindow: "1 minute",
   })

@@ -1,0 +1,64 @@
+// services/location-service/prisma/schema.prisma
+// PostGIS extension enables geographic data types and spatial indexes.
+// The Unsupported("geography(Point,4326)") column stores lat/lng as
+// a PostGIS point in WGS84 coordinate system (the same as GPS/Google Maps).
+//
+// WHY geography NOT geometry:
+// geometry: flat-earth calculations (fast, inaccurate at large distances)
+// geography: spherical-earth calculations (accurate for GPS coordinates)
+// For cleanup zone proximity searches spanning hundreds of km,
+// geography gives correct distance measurements.
+// The performance difference is negligible for our query volume.
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("LOCATION_DATABASE_URL")
+  extensions = [postgis]
+}
+
+model CleanupZone {
+  id           String   @id @default(cuid())
+  name         String
+  description  String   @db.Text
+  // PostGIS geography point — cannot use Prisma type, use Unsupported
+  // Raw SQL required for spatial queries (see zone.repository.ts)
+  center       Unsupported("geography(Point,4326)")
+  radiusMeters Int
+  country      String   @db.VarChar(2)   // ISO 3166-1 alpha-2
+  region       String
+  city         String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // eventId is nullable — zones can exist without an event
+  // (e.g. pre-defined zones for a city's parks)
+  eventId      String?
+
+  @@index([country, region])
+  @@index([eventId])
+  // Spatial index — required for ST_DWithin proximity queries
+  // Without this, every proximity query is a full table scan
+  // @@index([center]) -- added via raw migration (Prisma cannot create spatial indexes)
+}
+
+model ParticipantCheckIn {
+  id          String    @id @default(cuid())
+  eventId     String
+  userId      String
+  zoneId      String
+  checkedInAt DateTime  @default(now())
+  checkedOutAt DateTime?
+  // Last known GPS position stored for audit trail
+  lastLat     Float?
+  lastLng     Float?
+  lastSeenAt  DateTime?
+
+  @@unique([eventId, userId])
+  @@index([eventId])
+  @@index([userId])
+}
