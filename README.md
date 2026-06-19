@@ -33,4 +33,6 @@ $0.00 local development. See ARCHITECTURE.md for production cost estimate.
 
 ## Development Steps
 - Staged and committed A Mustafa's initial uncommitted changes.<br>
+- Stopped conflicting PostgreSQL containers from another project and started CleanNation Docker Compose databases (PostgreSQL, Redis, Kafka) successfully.<br>
+
 
