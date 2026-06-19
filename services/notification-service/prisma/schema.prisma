@@ -1,0 +1,91 @@
+// services/notification-service/prisma/schema.prisma
+// notification-service owns two tables:
+//
+// NotificationLog: every notification ever sent or attempted.
+//   - Idempotency: before sending, check if kafkaEventId already exists.
+//   - Audit: support can verify "did the user receive this notification?"
+//   - Metrics: delivery rate, failure rate, provider latency
+//
+// PushSubscription: VAPID push subscription data.
+//   - Stored when a browser grants push permission
+//   - Deleted when push returns 410 Gone (user revoked permission)
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("NOTIFICATION_DATABASE_URL")
+}
+
+model NotificationLog {
+  id              String             @id @default(cuid())
+  // kafkaEventId is the UUID from KafkaEventEnvelope.eventId
+  // Used as idempotency key — if this ID exists, skip processing
+  kafkaEventId    String             @unique
+  kafkaTopic      String
+  userId          String
+  type            NotificationType
+  channel         NotificationChannel
+  status          NotificationStatus @default(PENDING)
+  // Recipient address — email address or push endpoint URL
+  recipient       String
+  subject         String?
+  // First 500 chars of the notification body (for audit, not full content)
+  bodyPreview     String?            @db.VarChar(500)
+  // Error details if delivery failed
+  errorMessage    String?
+  // Number of attempts made (including retries)
+  attemptCount    Int                @default(0)
+  // Track which DLQ message this came from (if replayed from DLQ)
+  dlqMessageId    String?
+  sentAt          DateTime?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  @@index([userId])
+  @@index([kafkaEventId])
+  @@index([status, createdAt])
+  @@index([type, status])
+}
+
+model PushSubscription {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  // Web Push subscription fields from browser Notification API
+  endpoint    String   @unique @db.Text
+  p256dhKey   String   // Browser public key (base64url)
+  authKey     String   // Auth secret (base64url)
+  userAgent   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+}
+
+enum NotificationType {
+  WELCOME
+  EVENT_CONFIRMATION
+  EVENT_REMINDER
+  EVENT_CANCELLED
+  EVENT_COMPLETED
+  BADGE_EARNED
+  POINTS_AWARDED
+  ACCOUNT_VERIFIED
+}
+
+enum NotificationChannel {
+  EMAIL
+  PUSH
+  SMS  // future — Twilio integration
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
+  SKIPPED  // idempotency — already processed
+  DLQ      // moved to dead-letter queue
+}
