@@ -1,0 +1,92 @@
+// proto/media.proto
+// Protobuf schema for media-service gRPC API.
+//
+// THIS FILE IS THE CONTRACT between media-service (server)
+// and any service that calls it (event-service, etc.).
+//
+// VERSIONING RULE:
+// - Adding a new field: safe (old clients ignore unknown fields)
+// - Removing a field: BREAKING (old clients expect it)
+// - Renaming a field: BREAKING (field numbers are what matter, not names)
+// - Changing a field's type: BREAKING
+//
+// Field numbers (the = 1, = 2) must NEVER be reused.
+// If you remove field 3, the next new field must be field 4 (or higher).
+// Reusing numbers corrupts deserialization.
+//
+// WHY PROTOBUF over JSON:
+// "verified" as a string = 8 bytes
+// VerificationStatus.VERIFIED as an enum = 1 byte (varint)
+// At 10,000 status lookups/second: 70KB/s saved in payload alone.
+// Plus HTTP/2 header compression and binary framing overhead reduction.
+
+syntax = "proto3";
+
+package media;
+
+// Service definition — maps to gRPC method stubs
+service MediaVerification {
+  // Get verification status of a single media asset
+  rpc GetVerificationStatus(GetVerificationStatusRequest)
+    returns (GetVerificationStatusResponse);
+
+  // Get status of multiple media assets in one call
+  // Use this instead of N individual calls — reduces round trips
+  rpc BatchGetVerificationStatus(BatchGetVerificationStatusRequest)
+    returns (BatchGetVerificationStatusResponse);
+
+  // Queue a media asset for verification
+  // Returns immediately — verification is async
+  rpc TriggerVerification(TriggerVerificationRequest)
+    returns (TriggerVerificationResponse);
+}
+
+message GetVerificationStatusRequest {
+  string media_id = 1;
+}
+
+message GetVerificationStatusResponse {
+  string media_id = 1;
+  VerificationStatus status = 2;
+  float score = 3;            // 0.0 – 1.0 confidence score
+  string processed_at = 4;   // ISO 8601, empty if not yet processed
+  string error_message = 5;  // populated if status = REJECTED
+}
+
+message BatchGetVerificationStatusRequest {
+  repeated string media_ids = 1;  // max 100 per call
+}
+
+message BatchGetVerificationStatusResponse {
+  repeated GetVerificationStatusResponse results = 1;
+}
+
+message TriggerVerificationRequest {
+  string media_id = 1;
+  string event_id = 2;
+  Priority priority = 3;
+}
+
+message TriggerVerificationResponse {
+  bool queued = 1;
+  int32 estimated_processing_ms = 2;
+  string queue_position = 3;
+}
+
+// Enums — stored as integers in the wire format
+// NEVER reorder or remove values (would change integer mappings)
+// ALWAYS add new values at the end
+enum VerificationStatus {
+  VERIFICATION_STATUS_UNSPECIFIED = 0;   // proto3 requires a zero value
+  PENDING = 1;
+  PROCESSING = 2;
+  VERIFIED = 3;
+  REJECTED = 4;
+  MANUAL_REVIEW = 5;
+}
+
+enum Priority {
+  PRIORITY_UNSPECIFIED = 0;
+  NORMAL = 1;
+  HIGH = 2;   // Pro/Enterprise tier — processed before normal queue
+}
