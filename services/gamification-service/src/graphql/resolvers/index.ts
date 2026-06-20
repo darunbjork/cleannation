@@ -1,0 +1,1 @@
+export { leaderboardResolvers as resolvers } from "./leaderboard.resolver"

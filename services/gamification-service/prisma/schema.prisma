@@ -1,0 +1,107 @@
+// services/gamification-service/prisma/schema.prisma
+// Durable store for all gamification data.
+// Redis is the FAST layer — PostgreSQL is the CORRECT layer.
+// If Redis is empty, rebuild from PostgreSQL.
+// If PostgreSQL disagrees with Redis, PostgreSQL wins.
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("GAMIFICATION_DATABASE_URL")
+}
+
+model UserStats {
+  id                  String   @id @default(cuid())
+  userId              String   @unique
+  totalPoints         Int      @default(0)
+  eventsJoined        Int      @default(0)
+  eventsCompleted     Int      @default(0)
+  currentStreakDays   Int      @default(0)
+  longestStreakDays   Int      @default(0)
+  lastEventAt         DateTime?
+  kgWasteEstimated    Float    @default(0)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  pointsHistory PointsTransaction[]
+  badges        UserBadge[]
+
+  @@index([totalPoints])
+  @@index([userId])
+}
+
+model PointsTransaction {
+  id          String   @id @default(cuid())
+  userId      String
+  points      Int      // positive = earned, negative = deducted (rare)
+  reason      PointsReason
+  eventId     String?
+  mediaId     String?
+  // Running total at time of transaction — allows audit and replay
+  balanceAfter Int
+  createdAt   DateTime @default(now())
+
+  stats       UserStats @relation(fields: [userId], references: [userId])
+
+  @@index([userId, createdAt])
+  @@index([eventId])
+}
+
+model Badge {
+  id          String        @id @default(cuid())
+  category    BadgeCategory @unique
+  name        String
+  description String
+  iconUrl     String
+  pointsBonus Int
+  rarity      BadgeRarity
+  createdAt   DateTime      @default(now())
+
+  userBadges  UserBadge[]
+}
+
+model UserBadge {
+  id        String   @id @default(cuid())
+  userId    String
+  badgeId   String
+  earnedAt  DateTime @default(now())
+
+  stats     UserStats @relation(fields: [userId], references: [userId])
+  badge     Badge     @relation(fields: [badgeId], references: [id])
+
+  @@unique([userId, badgeId])
+  @@index([userId])
+}
+
+enum PointsReason {
+  EVENT_COMPLETED
+  MEDIA_VERIFIED
+  BADGE_BONUS
+  STREAK_BONUS
+  REFERRAL_BONUS
+  ADMIN_ADJUSTMENT
+}
+
+enum BadgeCategory {
+  FIRST_CLEANUP
+  EVENTS_10
+  EVENTS_50
+  EVENTS_100
+  STREAK_7DAY
+  STREAK_30DAY
+  REGION_CHAMPION
+  NATIONAL_CHAMPION
+  TON_COLLECTED
+  ORGANIZER_100
+}
+
+enum BadgeRarity {
+  COMMON
+  RARE
+  EPIC
+  LEGENDARY
+}
