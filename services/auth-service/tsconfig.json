@@ -4,8 +4,8 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "outDir": "./dist",
-    "rootDir": "./src",
     "strict": true,
+    "rootDir": "../..",
     "noImplicitAny": false,
     "strictNullChecks": true,
     "noUncheckedIndexedAccess": true,
@@ -17,7 +17,9 @@
     "skipLibCheck": true,
     "sourceMap": true,
     "paths": {
-      "@prisma/client": ["./prisma/node_modules/.prisma/client"]
+      "@prisma/client": ["./prisma/node_modules/.prisma/client"],
+      "@cleannation/shared-utils": ["../../packages/shared-utils/src/index.ts"],
+      "@cleannation/shared-types": ["../../packages/shared-types/src/index.ts"]
     }
   },
   "include": ["src/**/*", "src/types/**/*.d.ts"],

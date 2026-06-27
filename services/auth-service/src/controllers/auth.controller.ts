@@ -1,6 +1,4 @@
-// services/auth-service/src/controllers/auth.controller.ts
 import { asyncHandler } from "@cleannation/shared-utils"
-import { ok } from "@cleannation/shared-types"
 import { AuthService } from "../services/auth.service"
 import { config } from "../config/index"
 
@@ -14,11 +12,16 @@ const REFRESH_COOKIE_OPTIONS = {
   maxAge: config.jwt.refreshTokenExpiryMs / 1000,
 }
 
-// Helper to cast request with correlationId
+const ok = <T, M extends Record<string, any>>(data: T, meta: M) => ({
+  success: true,
+  data,
+  error: null,
+  meta,
+})
+
 const getCorrelationId = (request: any): string => 
   request.correlationId ?? "unknown"
 
-// POST /auth/register
 export const register = asyncHandler(async (request, reply) => {
   const body = request.body as {
     email: string

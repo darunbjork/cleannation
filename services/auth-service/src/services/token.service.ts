@@ -1,37 +1,8 @@
-// services/auth-service/src/services/token.service.ts
-// JWT access token and refresh token lifecycle.
-//
-// ACCESS TOKEN:
-//   - Signed with RS256 private key
-//   - Expires in 15 minutes
-//   - Carries userId, email, role, orgId
-//   - Stateless — no DB lookup needed to verify
-//   - Verified by gateway using public key
-//
-// REFRESH TOKEN:
-//   - Random 64-byte hex string (not a JWT)
-//   - Expires in 7 days
-//   - Hashed before storage (SHA-256)
-//   - Stored in DB with userId, jti, expiry
-//   - Sent as HttpOnly cookie to client
-//   - On use: old token revoked, new pair issued (rotation)
-//   - On logout: jti added to Redis blocklist
-//
-// WHY refresh tokens are NOT JWTs:
-// If a refresh token were a JWT, a compromised private key would
-// allow an attacker to forge both access AND refresh tokens.
-// A random opaque token has no crypto — its only validity is its
-// presence in the database. DB records can be instantly revoked.
-
 import crypto from "node:crypto"
 import { createSigner } from "fast-jwt"
 import { config } from "../config/index"
 import { redis } from "../db/redis"
 import type { JwtPayload, UserRole } from "@cleannation/shared-types"
-
-// fast-jwt: faster than jsonwebtoken, same security guarantees
-// We use it directly here rather than through @fastify/jwt
-// because token service is called outside of Fastify's request context
 
 export class TokenService {
   private readonly signSync: (payload: object) => string

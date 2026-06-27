@@ -1,27 +1,3 @@
-// services/notification-service/src/kafka/consumer.ts
-// Main Kafka consumer — the heart of notification-service.
-//
-// RELIABILITY PATTERN IMPLEMENTED HERE:
-//
-// 1. IDEMPOTENCY CHECK (before processing):
-//    findByKafkaEventId(envelope.eventId)
-//    → already processed? skip, commit offset, continue
-//    → not processed? proceed
-//
-// 2. PROCESSING with retry:
-//    try handler()
-//    catch error:
-//      attempt < maxRetries? → sleep(backoff), increment attempt, retry
-//      attempt >= maxRetries? → publishToDlq(), markDlq(), commit offset
-//
-// 3. MANUAL OFFSET COMMIT (after processing):
-//    Only commit after successful processing OR after DLQ publish.
-//    Never commit before — guarantees no silent loss.
-//
-// 4. GRACEFUL SHUTDOWN:
-//    consumer.stop() waits for current message to finish.
-//    consumer.disconnect() triggers clean rebalance.
-
 import { Kafka, type Consumer } from "kafkajs"
 import { createLogger, logKafkaEvent } from "@cleannation/shared-utils"
 import {

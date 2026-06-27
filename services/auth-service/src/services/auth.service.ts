@@ -1,8 +1,3 @@
-// services/auth-service/src/services/auth.service.ts
-// Core authentication business logic.
-// This service ONLY throws AppError subclasses — never plain Errors.
-// The global error handler maps AppError → HTTP response automatically.
-
 import type { UserRole } from "@cleannation/shared-types"
 import {
   EmailAlreadyExistsError,

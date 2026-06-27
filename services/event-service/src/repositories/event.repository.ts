@@ -1,5 +1,3 @@
-// services/event-service/src/repositories/event.repository.ts
-
 import type {
   CleanupEvent,
   EventStatus,
@@ -42,7 +40,6 @@ export class EventRepository {
 
     const skip = (filters.page - 1) * filters.limit
 
-    // Run count and data queries in parallel — saves one round trip
     const [events, total] = await Promise.all([
       prisma.cleanupEvent.findMany({
         where,
@@ -89,8 +86,6 @@ export class EventRepository {
     })
   }
 
-  // Soft delete — never remove event records
-  // Organizers, participants, and grant reports reference them
   async softDelete(id: string): Promise<void> {
     await prisma.cleanupEvent.update({
       where: { id },
@@ -102,8 +97,6 @@ export class EventRepository {
     })
   }
 
-  // Count events created by an organizer in the current month
-  // Used for tier limit enforcement
   async countByOrganizerThisMonth(
     organizerId: string
   ): Promise<number> {
@@ -120,9 +113,6 @@ export class EventRepository {
     })
   }
 
-  // Atomically increment participant count
-  // Using raw update (not read-then-write) prevents race conditions
-  // Two simultaneous joins cannot both read count=49 and both write 50
   async incrementParticipantCount(
     id: string,
     maxParticipants: number
@@ -131,8 +121,6 @@ export class EventRepository {
       return await prisma.cleanupEvent.update({
         where: {
           id,
-          // Optimistic lock: only update if there's still capacity
-          // This prevents over-registration at the database level
           currentParticipants: { lt: maxParticipants },
           deletedAt: null,
         },
@@ -142,7 +130,6 @@ export class EventRepository {
         },
       })
     } catch {
-      // Record not found = no capacity available
       return null
     }
   }

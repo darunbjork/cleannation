@@ -1,15 +1,3 @@
-// services/auth-service/src/services/password.service.ts
-// Argon2id password hashing.
-//
-// This service has exactly one job: hash and verify passwords.
-// Isolated so the algorithm can be swapped without touching auth logic.
-//
-// ARGON2ID vs ARGON2I vs ARGON2D:
-// argon2i: side-channel resistant — good for password hashing
-// argon2d: GPU resistant — good for crypto
-// argon2id: hybrid of both — OWASP recommendation for passwords
-// We use argon2id. Always.
-
 import argon2 from "argon2"
 import { config } from "../config/index"
 import { createLogger } from "@cleannation/shared-utils"
@@ -44,15 +32,10 @@ export class PasswordService {
         { error: error instanceof Error ? error.message : "unknown" },
         "Password verification error"
       )
-      // Return false on error — never throw from a verify call
-      // Throwing would leak timing information about hash format
       return false
     }
   }
 
-  // Checks if an existing hash needs rehashing with updated parameters.
-  // If we increase memoryCost in the future, existing hashes
-  // are automatically upgraded on the user's next login.
   needsRehash(hash: string): boolean {
     return argon2.needsRehash(hash, {
       memoryCost: config.argon2.memoryCost,

@@ -1,14 +1,3 @@
-// services/auth-service/src/db/redis.ts
-// Redis client for refresh token blocklist.
-//
-// WHY Redis for the blocklist (not PostgreSQL):
-// On every API request that carries a refresh token, we check
-// if the token's jti is in the blocklist.
-// A Redis GET is ~0.1ms. A PostgreSQL SELECT with index is ~2-5ms.
-// At 1000 req/s, that 2-4ms difference = 2-4 extra seconds of
-// aggregate latency per second of traffic.
-// Redis is the correct tool for this high-frequency boolean lookup.
-
 import Redis from "ioredis"
 import { createLogger } from "@cleannation/shared-utils"
 

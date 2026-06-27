@@ -13,7 +13,7 @@ export interface ResponseMeta {
 }
 
 export interface ApiError {
-  code: string // Using string to allow ErrorCode enum
+  code: string 
   message: string
   details: unknown | null
 }

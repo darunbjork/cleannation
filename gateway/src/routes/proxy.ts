@@ -8,8 +8,6 @@ export default async function proxyRoutes(fastify: FastifyInstance): Promise<voi
 
   const proxyPlugin = httpProxy as unknown as FastifyPluginCallback<FastifyHttpProxyOptions>
 
-  // Use 'any' only for registration as a last resort to satisfy type checker 
-  // without structural changes.
   const registerProxy = async (opts: any) => {
     await fastify.register(proxyPlugin, opts)
   }

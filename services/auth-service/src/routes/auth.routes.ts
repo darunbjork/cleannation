@@ -1,9 +1,3 @@
-// services/auth-service/src/routes/auth.routes.ts
-// Route definitions with Fastify JSON schema validation.
-// Schema validation runs BEFORE the controller.
-// Invalid input is rejected at the schema level — controllers
-// receive typed, validated data. Zero manual input checking.
-
 import type { FastifyInstance, RouteHandlerMethod } from "fastify"
 import * as authController from "../controllers/auth.controller"
 

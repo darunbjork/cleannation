@@ -1,16 +1,3 @@
-// services/auth-service/src/db/prisma.ts
-// Singleton Prisma client.
-//
-// WHY singleton:
-// PrismaClient manages a connection pool internally.
-// Creating a new PrismaClient per request = a new connection pool
-// per request = connection limit exhaustion under any real load.
-// PostgreSQL default max_connections = 100.
-// At 100 concurrent requests, each creating a new client = instant 
-// connection limit hit = all subsequent requests fail.
-//
-// One client per process = one pool per process = correct.
-
 import { PrismaClient } from "@prisma/client"
 import { createLogger } from "@cleannation/shared-utils"
 

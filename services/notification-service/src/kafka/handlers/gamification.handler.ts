@@ -1,6 +1,3 @@
-// services/notification-service/src/kafka/handlers/gamification.handler.ts
-// Handles badge.earned events
-
 import { createLogger } from "@cleannation/shared-utils"
 import type { BadgeEarnedPayload } from "@cleannation/shared-types"
 import { NotificationService } from "../../services/notification.service"

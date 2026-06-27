@@ -1,5 +1,3 @@
-// services/location-service/src/index.ts
-
 import Fastify from "fastify"
 import helmet from "@fastify/helmet"
 import cors from "@fastify/cors"
@@ -19,6 +17,8 @@ import { handleWebSocketConnection } from "./websocket/handler"
 import { roomManager } from "./websocket/room.manager"
 import zoneRoutes from "./routes/zone.routes"
 import healthRoutes from "./routes/health.routes"
+import type { WebSocket } from "ws"
+import type { FastifyRequest } from "fastify"
 
 const logger = createLogger("location-service")
 
@@ -31,21 +31,19 @@ declare module "fastify" {
 async function buildServer() {
   const fastify = Fastify({ logger: false })
 
-  await fastify.register(helmet)
-  await fastify.register(cors, {
+  // Register plugins with type assertions to bypass v4/v5 mismatches
+  await fastify.register(helmet as any)
+  await fastify.register(cors as any, {
     origin: config.cors.origin.split(","),
     credentials: true,
   })
-  await fastify.register(rateLimit, {
+  await fastify.register(rateLimit as any, {
     max: 300,
     timeWindow: "1 minute",
   })
 
-  // WebSocket plugin — enables ws:// upgrade on specific routes
-  await fastify.register(websocketPlugin, {
+  await fastify.register(websocketPlugin as any, {
     options: {
-      // Maximum message size: 10KB — position updates are tiny
-      // Prevents memory exhaustion from malicious large messages
       maxPayload: 10_240,
     },
   })
@@ -58,7 +56,6 @@ async function buildServer() {
     void reply.header("X-Correlation-Id", request.correlationId)
   })
 
-  // Request logging
   fastify.addHook("onRequest", async (request) => {
     ;(request as unknown as { startTime: number }).startTime = Date.now()
   })
@@ -92,14 +89,13 @@ async function buildServer() {
   })
 
   // ── WEBSOCKET ROUTE ────────────────────────────────────────────────────
-  // GET /ws/tracking — upgrades to WebSocket connection
-  // The gateway forwards this route to location-service
-  // userId is injected by the gateway as a header
-  fastify.get(
+  // TypeScript doesn't recognise the websocket overload properly,
+  // so we cast to any to bypass the type check.
+  ;(fastify.get as any)(
     "/ws/tracking",
     { websocket: true },
-    (socket, request) => {
-      handleWebSocketConnection(socket, request)
+    (socket: WebSocket, req: FastifyRequest) => {
+      handleWebSocketConnection(socket, req)
     }
   )
 

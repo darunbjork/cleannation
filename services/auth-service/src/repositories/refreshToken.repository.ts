@@ -1,6 +1,3 @@
-// services/auth-service/src/repositories/refreshToken.repository.ts
-// Database access layer for refresh tokens.
-
 import type { RefreshToken } from "@prisma/client"
 import { prisma } from "../db/prisma"
 

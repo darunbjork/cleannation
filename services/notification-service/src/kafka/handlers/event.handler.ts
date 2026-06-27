@@ -1,6 +1,3 @@
-// services/notification-service/src/kafka/handlers/event.handler.ts
-// Handles event.joined, event.cancelled, event.completed events
-
 import { createLogger } from "@cleannation/shared-utils"
 import type {
   EventJoinedPayload,
@@ -9,7 +6,6 @@ import type {
 import { NotificationService } from "../../services/notification.service"
 import {
   eventConfirmationTemplate,
-  eventCancelledTemplate,
   eventCompletedTemplate,
 } from "../../email/templates"
 
@@ -26,14 +22,9 @@ export async function handleEventJoined(
     "Handling event.joined"
   )
 
-  // NOTE: In production we would fetch event details from event-service
-  // via gRPC to get the full event title, date, city.
-  // For this step: use placeholder data — the pattern is complete.
-  // gRPC inter-service calls are implemented in Step 9.
-
   const template = eventConfirmationTemplate({
-    displayName: "Volunteer",       // → fetched from auth-service
-    eventTitle: "Cleanup Event",    // → fetched from event-service
+    displayName: "Volunteer",      
+    eventTitle: "Cleanup Event",   
     eventDate: new Date(payload.registeredAt).toLocaleDateString("en-SE"),
     eventCity: "Your City",
     pointsReward: 100,
@@ -49,7 +40,6 @@ export async function handleEventJoined(
     template,
   })
 
-  // Also send push notification
   await notifService.sendPushNotification({
     kafkaEventId,
     kafkaTopic,
@@ -74,14 +64,11 @@ export async function handleEventCompleted(
     "Handling event.completed"
   )
 
-  // In production: fetch all participant userIds from event-service
-  // and send one notification per participant.
-  // For this step: demonstrate the pattern with the organizer.
   const template = eventCompletedTemplate({
     displayName: "Organizer",
     eventTitle: "Cleanup Event",
     pointsEarned: payload.pointsToAward,
-    totalPoints: payload.pointsToAward,  // → fetched from gamification-service
+    totalPoints: payload.pointsToAward,  
     dashboardUrl: notifService.getAppUrl("/dashboard"),
   })
 

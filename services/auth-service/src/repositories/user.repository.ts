@@ -1,14 +1,3 @@
-// services/auth-service/src/repositories/user.repository.ts
-// Database access layer for users.
-// ONLY this file knows Prisma exists.
-// Services call repository methods — never import prisma directly.
-//
-// WHY repository pattern:
-// If we switch from Prisma to a raw driver, we change this file only.
-// Services are completely unaffected — they depend on the interface,
-// not the implementation. This is the Dependency Inversion Principle
-// applied to database access.
-
 import type { User } from "@prisma/client"
 import { prisma } from "../db/prisma"
 
