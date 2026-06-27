@@ -7,6 +7,9 @@ import type {
 import { prisma } from "../db/prisma"
 
 export class EventRepository {
+  static mockImplementation(_arg0: () => EventRepository) {
+    throw new Error("Method not implemented.")
+  }
 
   async findById(id: string): Promise<CleanupEvent | null> {
     return prisma.cleanupEvent.findFirst({
