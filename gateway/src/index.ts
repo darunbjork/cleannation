@@ -38,14 +38,17 @@ async function buildServer() {
     genReqId: () => `req_${Math.random().toString(36).slice(2, 11)}`,
   })
 
-  // Register custom content-type parser to allow empty JSON bodies
-  fastify.addContentTypeParser("application/json", { parseAs: "string" }, (req, body, done) => {
-    if (typeof body === "string" && body.trim() === "") {
+  // ── Register custom content-type parser to allow empty JSON bodies ──
+  // The _req parameter is intentionally unused; prefix with underscore.
+  fastify.addContentTypeParser("application/json", { parseAs: "string" }, (_req, body, done) => {
+    // body can be Buffer or string; convert to string safely
+    const bodyStr = typeof body === "string" ? body : body.toString("utf-8")
+    if (bodyStr.trim() === "") {
       done(null, undefined)
       return
     }
     try {
-      const json = JSON.parse(body)
+      const json = JSON.parse(bodyStr)
       done(null, json)
     } catch (err: any) {
       err.statusCode = 400
@@ -53,25 +56,23 @@ async function buildServer() {
     }
   })
 
-  // Register plugins with explicit callback types
+  // ── Plugins ─────────────────────────────────────────────────────────
   await fastify.register(helmet as unknown as FastifyPluginCallback<FastifyHelmetOptions>, {
     contentSecurityPolicy: config.nodeEnv === "production",
   })
-  
-  // CORS and plugins that export FastifyPluginCallback/Async should be handled directly
+
   await fastify.register(corsPlugin as unknown as FastifyPluginCallback)
-  
+
   await fastify.register(cookie as unknown as FastifyPluginCallback<FastifyCookieOptions>, {
     secret: process.env["COOKIE_SECRET"] ?? "dev-cookie-secret-change-in-prod",
   })
 
   await fastify.register(correlationIdMiddleware)
   await fastify.register(requestLoggerMiddleware)
-  
-  // Rate limit and JWT plugins
+
   await fastify.register(rateLimitPlugin as unknown as FastifyPluginCallback)
   await fastify.register(jwtPlugin as unknown as FastifyPluginCallback)
-  
+
   await fastify.register(errorHandlerPlugin)
 
   await fastify.register(healthRoutes)

@@ -30,6 +30,7 @@ describe("CleanNation — End-to-End Integration", () => {
   // ── Setup: register two users ────────────────────────────────
   beforeAll(async () => {
     // Register admin – the first user gets platform_admin automatically.
+    // ASSUMPTION: The auth database is empty (reset before running tests).
     const adminReg = await api<{
       success: boolean
       data: { accessToken: string; user: { id: string; role: string } }
@@ -45,7 +46,6 @@ describe("CleanNation — End-to-End Integration", () => {
 
     expect(adminReg.status).toBe(201)
     expect(adminReg.data.success).toBe(true)
-    // Assert that the first user gets platform_admin
     expect(adminReg.data.data.user.role).toBe("platform_admin")
 
     adminToken = adminReg.data.data.accessToken
@@ -69,7 +69,7 @@ describe("CleanNation — End-to-End Integration", () => {
     volunteerToken = volReg.data.data.accessToken
   }, 30_000)
 
-  // ── Test 1: Health check ──────────────────────────────────────
+  // ── Tests (unchanged) ─────────────────────────────────────────
   it("gateway /health/live returns 200", async () => {
     const { status, data } = await api<{ status: string }>(
       "/health/live"
@@ -78,13 +78,11 @@ describe("CleanNation — End-to-End Integration", () => {
     expect((data as { status: string }).status).toBe("ok")
   })
 
-  // ── Test 2: Unauthenticated request is rejected ───────────────
   it("protected route returns 401 without token", async () => {
     const { status } = await api("/api/v1/auth/me")
     expect(status).toBe(401)
   })
 
-  // ── Test 3: GET /auth/me returns correct user ─────────────────
   it("GET /auth/me returns the authenticated user", async () => {
     const { status, data } = await api<{
       success: boolean
@@ -98,7 +96,6 @@ describe("CleanNation — End-to-End Integration", () => {
     expect(data.data.id).toBe(adminUserId)
   })
 
-  // ── Test 4: Create a cleanup event ───────────────────────────
   it("admin can create a cleanup event", async () => {
     const { status, data } = await api<{
       success: boolean
@@ -127,7 +124,6 @@ describe("CleanNation — End-to-End Integration", () => {
     expect(eventId).toBeTruthy()
   })
 
-  // ── Test 5: Publish the event ─────────────────────────────────
   it("admin can publish the event", async () => {
     const { status, data } = await api<{
       success: boolean
@@ -141,7 +137,6 @@ describe("CleanNation — End-to-End Integration", () => {
     expect(data.data.status).toBe("PUBLISHED")
   })
 
-  // ── Test 6: Volunteer joins the event ─────────────────────────
   it("volunteer can join a published event", async () => {
     const { status, data } = await api<{
       success: boolean
@@ -157,7 +152,6 @@ describe("CleanNation — End-to-End Integration", () => {
     expect(data.data.eventId).toBe(eventId)
   })
 
-  // ── Test 7: Duplicate join is rejected ───────────────────────
   it("volunteer cannot join the same event twice", async () => {
     const { status, data } = await api<{ error: { code: string } }>(
       `/api/v1/events/${eventId}/join`,
@@ -171,7 +165,6 @@ describe("CleanNation — End-to-End Integration", () => {
     expect(data.error.code).toBe("ALREADY_REGISTERED")
   })
 
-  // ── Test 8: GraphQL query returns correct data ────────────────
   it("GraphQL returns event with correct participant count", async () => {
     const query = `
       query {
@@ -207,7 +200,6 @@ describe("CleanNation — End-to-End Integration", () => {
     expect(data.data.event.currentParticipants).toBe(1)
   })
 
-  // ── Test 9: Kafka received the events ────────────────────────
   it("Kafka received event.created and event.joined messages", async () => {
     const topicsRes = await fetch(`${KAFKA_UI}/api/topics`)
 
@@ -225,7 +217,6 @@ describe("CleanNation — End-to-End Integration", () => {
     expect(topicNames).toContain("event.joined")
   })
 
-  // ── Test 10: Rate limiting activates ─────────────────────────
   it("rate limiting returns 429 after too many auth requests", async () => {
     const requests = Array.from({ length: 8 }, () =>
       api("/api/v1/auth/login", {

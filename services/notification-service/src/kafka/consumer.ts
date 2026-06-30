@@ -1,4 +1,4 @@
-import { Kafka, type Consumer } from "kafkajs"
+import { Kafka, type Consumer, type EachMessagePayload } from "kafkajs"
 import { createLogger, logKafkaEvent } from "@cleannation/shared-utils"
 import {
   KAFKA_TOPICS,
@@ -184,7 +184,13 @@ export async function startConsumer(): Promise<void> {
   await consumer.run({
     autoCommit: false,
 
-    eachMessage: async ({ topic, partition, message, heartbeat }) => {
+    // ── eachMessage with explicit types ──────────────────────────────
+    eachMessage: async ({
+      topic,
+      partition,
+      message,
+      heartbeat,
+    }: EachMessagePayload): Promise<void> => {
       if (message.value === null) {
         logger.warn({ topic, partition }, "Null message value — skipping")
         return

@@ -1,3 +1,4 @@
+// services/event-service/prisma/schema.prisma
 // event-service owns events and registrations ONLY.
 generator client {
   provider = "prisma-client-js"
