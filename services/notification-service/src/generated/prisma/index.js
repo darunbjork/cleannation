@@ -175,7 +175,7 @@ const config = {
       "value": "prisma-client-js"
     },
     "output": {
-      "value": "/Users/darunbjork/Documents/micro-services/cleannation/services/notification-service/src/generated/prisma",
+      "value": "/Users/bjork/Documents/microservices/backend/cleannation/services/notification-service/src/generated/prisma",
       "fromEnvVar": null
     },
     "config": {
@@ -189,11 +189,11 @@ const config = {
       }
     ],
     "previewFeatures": [],
-    "sourceFilePath": "/Users/darunbjork/Documents/micro-services/cleannation/services/notification-service/prisma/schema.prisma",
+    "sourceFilePath": "/Users/bjork/Documents/microservices/backend/cleannation/services/notification-service/prisma/schema.prisma",
     "isCustomOutput": true
   },
   "relativeEnvPaths": {
-    "rootEnvPath": "../../../.env",
+    "rootEnvPath": null,
     "schemaEnvPath": "../../../.env"
   },
   "relativePath": "../../../prisma",
@@ -203,7 +203,6 @@ const config = {
     "db"
   ],
   "activeProvider": "postgresql",
-  "postinstall": false,
   "inlineDatasources": {
     "db": {
       "url": {

@@ -39,8 +39,6 @@ export class BadgeRepository {
     return count > 0
   }
 
-  // Award a badge — idempotent due to @@unique constraint
-  // Returns null if already awarded (not an error)
   async awardBadge(
     userId: string,
     badgeId: string
@@ -50,13 +48,10 @@ export class BadgeRepository {
         data: { userId, badgeId },
       })
     } catch {
-      // Unique constraint violation — already has this badge
       return null
     }
   }
 
-  // Seed the badge catalog — called on service startup
-  // Idempotent — uses upsert so it is safe to run multiple times
   async seedBadges(): Promise<void> {
     const badges: Array<{
       category: BadgeCategory

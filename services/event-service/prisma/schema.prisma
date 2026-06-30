@@ -1,20 +1,12 @@
-// services/event-service/prisma/schema.prisma
 // event-service owns events and registrations ONLY.
-// It stores userId and locationId as plain strings —
-// it never JOINs to the user or location databases.
-// Cross-service data is fetched via GraphQL resolvers calling
-// the respective services, or via the Kafka event log.
-
 generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["postgresqlExtensions"]
-  output          = "./node_modules/.prisma/client"
+  provider = "prisma-client-js"
+  output   = "./node_modules/.prisma/client"
 }
 
 datasource db {
-  provider   = "postgresql"
-  url        = env("EVENT_DATABASE_URL")
-  extensions = [postgis]
+  provider = "postgresql"
+  url      = env("EVENT_DATABASE_URL")
 }
 
 model CleanupEvent {
@@ -23,29 +15,22 @@ model CleanupEvent {
   description          String        @db.Text
   category             EventCategory
   status               EventStatus   @default(DRAFT)
-
-  // Foreign keys to other services — stored as strings, never JOINed
   organizerId          String
   organizationId       String?
-
   maxParticipants      Int
   currentParticipants  Int           @default(0)
   scheduledAt          DateTime
   estimatedDurationMin Int
-  locationId           String        // → location-service
+  locationId           String
   pointsReward         Int           @default(100)
-
   createdAt            DateTime      @default(now())
   updatedAt            DateTime      @updatedAt
-  deletedAt            DateTime?     // soft delete — never hard delete events
-
+  deletedAt            DateTime?
   registrations        Registration[]
 
-  // Compound indexes match our most common query patterns
   @@index([organizerId, status])
   @@index([status, scheduledAt])
   @@index([locationId])
-  // Partial index — only non-deleted events in the main browse query
   @@index([status, scheduledAt, deletedAt])
 }
 
@@ -57,10 +42,8 @@ model Registration {
   registeredAt DateTime           @default(now())
   checkedInAt  DateTime?
   checkedOutAt DateTime?
-
   event        CleanupEvent @relation(fields: [eventId], references: [id])
 
-  // A user can only register once per event
   @@unique([eventId, userId])
   @@index([userId, status])
   @@index([eventId, status])

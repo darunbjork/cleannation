@@ -1,0 +1,230 @@
+# .github/workflows/ci.yml
+# Runs on every push to every branch.
+# Blocks merge if any job fails.
+#
+# TWO JOBS:
+# 1. quality  — fast checks (type, lint) — no Docker needed
+# 2. integration — spins up real services, tests full flow
+#
+# quality runs first. If it fails, integration never starts.
+# This saves GitHub Actions minutes on broken code.
+
+name: CleanNation CI
+
+on:
+  push:
+    branches: ["**"] # every branch
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ── JOB 1: Quality checks ──────────────────────────────────────
+  quality:
+    name: Type Check + Lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      # Install all workspace dependencies from root
+      - name: Install dependencies
+        run: bun install
+
+      # Build shared packages first — services depend on them
+      - name: Build shared-types
+        working-directory: packages/shared-types
+        run: bun run build
+
+      - name: Build shared-utils
+        working-directory: packages/shared-utils
+        run: bun run build
+
+      # Type check every service
+      - name: Type check — gateway
+        working-directory: gateway
+        run: bun run type-check
+
+      - name: Type check — auth-service
+        working-directory: services/auth-service
+        run: bun run type-check
+
+      - name: Type check — event-service
+        working-directory: services/event-service
+        run: bun run type-check
+
+      - name: Type check — location-service
+        working-directory: services/location-service
+        run: bun run type-check
+
+      - name: Type check — notification-service
+        working-directory: services/notification-service
+        run: bun run type-check
+
+      - name: Type check — payment-service
+        working-directory: services/payment-service
+        run: bun run type-check
+
+      # Zero-any check — grep for ": any" in all service source files
+      - name: Zero-any check — auth-service
+        working-directory: services/auth-service
+        run: |
+          if grep -r ": any" src/ --include="*.ts"; then
+            echo "❌ Found 'any' types in auth-service"
+            exit 1
+          fi
+          echo "✅ Zero any types in auth-service"
+
+      - name: Zero-any check — event-service
+        working-directory: services/event-service
+        run: |
+          if grep -r ": any" src/ --include="*.ts"; then
+            echo "❌ Found 'any' types in event-service"
+            exit 1
+          fi
+          echo "✅ Zero any types in event-service"
+
+      # Unit tests — no Docker needed, no external services
+      - name: Unit tests — auth-service
+        working-directory: services/auth-service
+        run: bun run test
+
+      - name: Unit tests — event-service
+        working-directory: services/event-service
+        run: bun run test
+
+  # ── JOB 2: Integration tests ───────────────────────────────────
+  integration:
+    name: End-to-End Integration Test
+    runs-on: ubuntu-latest
+    needs: quality # only runs if quality job passes
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      # Generate RSA keys for JWT — needed by auth-service
+      - name: Generate JWT keys
+        run: |
+          openssl genrsa -out private.pem 2048
+          openssl rsa -in private.pem -pubout -out public.pem
+          # Format keys for .env (replace newlines with \n)
+          PRIVATE=$(awk 'NF {sub(/\r/, ""); printf "%s\\n",$0;}' private.pem)
+          PUBLIC=$(awk 'NF {sub(/\r/, ""); printf "%s\\n",$0;}' public.pem)
+          echo "JWT_PRIVATE_KEY=\"$PRIVATE\"" >> .env
+          echo "JWT_PUBLIC_KEY=\"$PUBLIC\"" >> .env
+
+      # Write the CI .env file
+      # GitHub Actions does not have a .env file by default
+      - name: Create .env for CI
+        run: |
+          cat >> .env << 'EOF'
+          NODE_ENV=test
+          LOG_LEVEL=error
+          GATEWAY_PORT=3000
+          AUTH_SERVICE_PORT=3001
+          EVENT_SERVICE_PORT=3002
+          LOCATION_SERVICE_PORT=3003
+          MEDIA_SERVICE_PORT=3004
+          GAMIFICATION_SERVICE_PORT=3005
+          NOTIFICATION_SERVICE_PORT=3006
+          PAYMENT_SERVICE_PORT=3007
+          MEDIA_GRPC_PORT=50051
+          AUTH_DATABASE_URL=postgresql://user:password@postgres-auth:5432/auth_db
+          EVENT_DATABASE_URL=postgresql://user:password@postgres-event:5432/event_db
+          LOCATION_DATABASE_URL=postgresql://user:password@postgres-location:5432/location_db
+          MEDIA_DATABASE_URL=postgresql://user:password@postgres-media:5432/media_db
+          GAMIFICATION_DATABASE_URL=postgresql://user:password@postgres-gamification:5432/gamification_db
+          NOTIFICATION_DATABASE_URL=postgresql://user:password@postgres-notification:5432/notification_db
+          PAYMENT_DATABASE_URL=postgresql://user:password@postgres-payment:5432/payment_db
+          REDIS_URL=redis://cn_redis:6379
+          KAFKA_BROKERS=redpanda:9092
+          KAFKA_CLIENT_ID=cleannation-ci
+          COOKIE_SECRET=ci-cookie-secret-32-characters-ok
+          CORS_ORIGIN=http://localhost:5173
+          AUTH_SERVICE_URL=http://cn_auth:3001
+          EVENT_SERVICE_URL=http://cn_event:3002
+          LOCATION_SERVICE_URL=http://cn_location:3003
+          MEDIA_SERVICE_URL=http://cn_media:3004
+          GAMIFICATION_SERVICE_URL=http://cn_gamification:3005
+          NOTIFICATION_SERVICE_URL=http://cn_notification:3006
+          PAYMENT_SERVICE_URL=http://cn_payment:3007
+          SMTP_HOST=cn_mailpit
+          SMTP_PORT=1025
+          SMTP_USER=test
+          SMTP_PASS=test
+          SMTP_FROM=noreply@cleannation.app
+          SMTP_FROM_NAME=CleanNation
+          APP_BASE_URL=http://localhost:5173
+          PUSH_VAPID_PUBLIC=
+          PUSH_VAPID_PRIVATE=
+          PUSH_VAPID_SUBJECT=mailto:push@cleannation.app
+          R2_ACCOUNT_ID=local
+          R2_ACCESS_KEY_ID=minioadmin
+          R2_SECRET_ACCESS_KEY=minioadmin
+          R2_BUCKET_NAME=cleannation-media
+          R2_PUBLIC_URL=http://localhost:9000/cleannation-media
+          STRIPE_SECRET_KEY=sk_test_placeholder
+          STRIPE_WEBHOOK_SECRET=whsec_placeholder
+          STRIPE_SUCCESS_URL=http://localhost:5173/dashboard
+          STRIPE_CANCEL_URL=http://localhost:5173/settings/billing
+          SOAP_API_KEY=dev-soap-key-change-in-production
+          SENTRY_DSN=
+          EOF
+
+      # Start full platform with Docker Compose
+      - name: Start platform
+        run: docker compose up --build -d
+
+      # Wait for gateway to be healthy — proves all services started
+      - name: Wait for gateway health
+        run: |
+          echo "Waiting for gateway to be ready..."
+          for i in $(seq 1 30); do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+              http://localhost:3000/health/live 2>/dev/null || echo "000")
+            if [ "$STATUS" = "200" ]; then
+              echo "✅ Gateway is healthy after ${i} attempts"
+              break
+            fi
+            echo "Attempt $i: gateway returned $STATUS — waiting 10s..."
+            sleep 10
+            if [ $i -eq 30 ]; then
+              echo "❌ Gateway never became healthy"
+              docker compose logs gateway
+              docker compose logs auth-service
+              exit 1
+            fi
+          done
+
+      # Run integration tests
+      - name: Run integration tests
+        run: bun run test:integration
+
+      # Always show logs if something failed
+      - name: Show logs on failure
+        if: failure()
+        run: |
+          echo "=== GATEWAY LOGS ==="
+          docker compose logs gateway --tail=50
+          echo "=== AUTH SERVICE LOGS ==="
+          docker compose logs auth-service --tail=50
+          echo "=== EVENT SERVICE LOGS ==="
+          docker compose logs event-service --tail=50
+
+      - name: Teardown
+        if: always()
+        run: docker compose down -v

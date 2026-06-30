@@ -1,138 +1,128 @@
-import type { FastifyInstance, FastifyRequest, FastifyReply, FastifyPluginCallback } from "fastify"
-import httpProxy, { type FastifyHttpProxyOptions } from "@fastify/http-proxy"
-import { buildPropagationHeaders } from "@cleannation/shared-utils"
-import { config } from "../config/index"
-import { AuthenticatedRequest } from "../types/auth"
+// gateway/src/routes/proxy.ts
+import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
+import { buildPropagationHeaders } from "@cleannation/shared-utils";
+import { config } from "../config/index";
+import { AuthenticatedRequest } from "../types/auth";
 
 export default async function proxyRoutes(fastify: FastifyInstance): Promise<void> {
+  async function forward(
+    request: FastifyRequest,
+    reply: FastifyReply,
+    upstream: string,
+    rewritePrefix: string,
+    extraHeaders: Record<string, string> = {}
+  ) {
+    const wildcard = (request.params as any)["*"] || "";
+    const servicePath = wildcard.replace(/^\/api\/v1\//, "");
+    const targetPath = servicePath ? `${rewritePrefix}/${servicePath}`.replace(/\/+/g, "/") : rewritePrefix;
+    const targetUrl = `${upstream}${targetPath}`;
 
-  const proxyPlugin = httpProxy as unknown as FastifyPluginCallback<FastifyHttpProxyOptions>
+    const headers: Record<string, string> = {};
+    for (const [key, value] of Object.entries(request.headers)) {
+      if (typeof value === "string" && key.toLowerCase() !== "host") {
+        headers[key.toLowerCase()] = value;
+      }
+    }
+    Object.assign(headers, extraHeaders);
 
-  const registerProxy = async (opts: any) => {
-    await fastify.register(proxyPlugin, opts)
+    const hasBody = request.body !== undefined && request.body !== null;
+    const isJsonBody = hasBody && request.method !== "GET" && request.method !== "HEAD";
+
+    if (isJsonBody) {
+      if (!headers["content-type"]) {
+        headers["content-type"] = "application/json";
+      }
+    } else if (!hasBody) {
+      delete headers["content-type"];
+    }
+
+    const fetchHeaders = new Headers();
+    for (const [key, value] of Object.entries(headers)) {
+      fetchHeaders.set(key, value);
+    }
+
+    const fetchOptions: RequestInit = {
+      method: request.method,
+      headers: fetchHeaders,
+    };
+    if (isJsonBody) {
+      fetchOptions.body = JSON.stringify(request.body);
+    }
+
+    try {
+      const response = await fetch(targetUrl, fetchOptions);
+      const data = await response.json();
+      return reply.status(response.status).send(data);
+    } catch (err) {
+      fastify.log.error(err);
+      return reply.status(500).send({ error: "Internal proxy error" });
+    }
   }
 
-  await registerProxy({
-    upstream: config.services.auth,
-    prefix: "/api/v1/auth",
-    rewritePrefix: "/auth",
-    config: { rateLimit: config.rateLimits.auth },
-    preHandler: async (request: FastifyRequest) => {
-      const headers = buildPropagationHeaders(request.correlationId)
-      Object.assign(request.headers, headers)
-    },
-  })
-
-  await registerProxy({
-    upstream: config.services.event,
-    prefix: "/api/v1/events",
-    rewritePrefix: "/events",
-    preHandler: async (request: FastifyRequest, reply: FastifyReply) => {
-      await fastify.authenticate(request, reply)
-      const authReq = request as AuthenticatedRequest
-      const headers = {
-        ...buildPropagationHeaders(authReq.correlationId),
-        "x-user-id": authReq.user.sub,
-        "x-user-role": authReq.user.role,
-        "x-org-id": authReq.user.orgId ?? "",
+  function registerProxy(
+    basePath: string,
+    upstream: string,
+    rewritePrefix: string,
+    needsAuth: boolean,
+    authRole?: string[],
+    extraHeadersFactory?: (req: FastifyRequest) => Record<string, string>
+  ) {
+    const handler = async (request: FastifyRequest, reply: FastifyReply) => {
+      let headers: Record<string, string> = {};
+      if (extraHeadersFactory) {
+        headers = extraHeadersFactory(request);
+      } else {
+        headers = buildPropagationHeaders(request.correlationId);
       }
-      Object.assign(request.headers, headers)
-    },
-  })
+      return forward(request, reply, upstream, rewritePrefix, headers);
+    };
 
-  await registerProxy({
-    upstream: config.services.location,
-    prefix: "/api/v1/locations",
-    rewritePrefix: "/locations",
-    preHandler: async (request: FastifyRequest, reply: FastifyReply) => {
-      await fastify.authenticate(request, reply)
-      const authReq = request as AuthenticatedRequest
-      const headers = {
-        ...buildPropagationHeaders(authReq.correlationId),
-        "x-user-id": authReq.user.sub,
-        "x-user-role": authReq.user.role,
-      }
-      Object.assign(request.headers, headers)
-    },
-  })
+    const preHandler: any[] = [];
+    if (needsAuth) preHandler.push(fastify.authenticate);
+    if (authRole && authRole.length) preHandler.push(fastify.authorize(authRole as any));
 
-  await registerProxy({
-    upstream: config.services.media,
-    prefix: "/api/v1/media",
-    rewritePrefix: "/media",
-    preHandler: async (request: FastifyRequest, reply: FastifyReply) => {
-      await fastify.authenticate(request, reply)
-      const authReq = request as AuthenticatedRequest
-      const headers = {
-        ...buildPropagationHeaders(authReq.correlationId),
-        "x-user-id": authReq.user.sub,
-        "x-user-role": authReq.user.role,
-        "x-org-id": authReq.user.orgId ?? "",
-      }
-      Object.assign(request.headers, headers)
-    },
-    config: { rateLimit: config.rateLimits.mediaUpload },
-  })
+    fastify.all(basePath, { preHandler }, handler);
+    fastify.all(`${basePath}/*`, { preHandler }, handler);
+  }
 
-  await registerProxy({
-    upstream: config.services.gamification,
-    prefix: "/api/v1/gamification",
-    rewritePrefix: "/gamification",
-    preHandler: async (request: FastifyRequest, reply: FastifyReply) => {
-      await fastify.authenticate(request, reply)
-      const authReq = request as AuthenticatedRequest
-      const headers = {
-        ...buildPropagationHeaders(authReq.correlationId),
-        "x-user-id": authReq.user.sub,
-        "x-user-role": authReq.user.role,
-      }
-      Object.assign(request.headers, headers)
-    },
-    config: { rateLimit: config.rateLimits.read },
-  })
+  fastify.get("/api/v1/auth/me", { preHandler: [fastify.authenticate] }, async (request, reply) => {
+    const authReq = request as AuthenticatedRequest;
+    const headers = {
+      ...buildPropagationHeaders(authReq.correlationId),
+      "x-user-id": authReq.user.sub,
+      "x-user-role": authReq.user.role,
+      "x-org-id": authReq.user.orgId ?? "",
+    };
+    return forward(request, reply, config.services.auth, "/auth/me", headers);
+  });
 
-  await registerProxy({
-    upstream: config.services.payment,
-    prefix: "/api/v1/payments",
-    rewritePrefix: "/payments",
-    preHandler: async (request: FastifyRequest, reply: FastifyReply) => {
-      await fastify.authenticate(request, reply)
-      await fastify.authorize(["org_admin", "platform_admin"])(request, reply)
-      const authReq = request as AuthenticatedRequest
-      const headers = {
-        ...buildPropagationHeaders(authReq.correlationId),
-        "x-user-id": authReq.user.sub,
-        "x-user-role": authReq.user.role,
-        "x-org-id": authReq.user.orgId ?? "",
-      }
-      Object.assign(request.headers, headers)
-    },
-    config: { rateLimit: config.rateLimits.payment },
-  })
+  fastify.all("/api/v1/auth/*", async (request, reply) => {
+    const headers = buildPropagationHeaders(request.correlationId);
+    return forward(request, reply, config.services.auth, "/auth", headers);
+  });
 
-  await registerProxy({
-    upstream: config.services.event,
-    prefix: "/api/v1/graphql",
-    rewritePrefix: "/graphql",
-    preHandler: async (request: FastifyRequest, reply: FastifyReply) => {
-      await fastify.authenticate(request, reply)
-      const authReq = request as AuthenticatedRequest
-      const headers = {
-        ...buildPropagationHeaders(authReq.correlationId),
-        "x-user-id": authReq.user.sub,
-        "x-user-role": authReq.user.role,
-      }
-      Object.assign(request.headers, headers)
-    },
-  })
+  registerProxy("/api/v1/events", config.services.event, "/events", true, undefined, (req) => {
+    const a = req as AuthenticatedRequest;
+    return {
+      ...buildPropagationHeaders(a.correlationId),
+      "x-user-id": a.user.sub,
+      "x-user-role": a.user.role,
+      "x-org-id": a.user.orgId ?? "",
+    };
+  });
 
-  await registerProxy({
-    upstream: config.services.payment,
-    prefix: "/api/v1/webhooks",
-    rewritePrefix: "/webhooks",
-    preHandler: async (request: FastifyRequest) => {
-      const headers = buildPropagationHeaders(request.correlationId)
-      Object.assign(request.headers, headers)
-    },
-  })
+  registerProxy("/api/v1/graphql", config.services.event, "/graphql", true, undefined, (req) => {
+    const a = req as AuthenticatedRequest;
+    return {
+      ...buildPropagationHeaders(a.correlationId),
+      "x-user-id": a.user.sub,
+      "x-user-role": a.user.role,
+    };
+  });
+
+  registerProxy("/api/v1/locations", config.services.location, "/locations", true);
+  registerProxy("/api/v1/media", config.services.media, "/media", true);
+  registerProxy("/api/v1/gamification", config.services.gamification, "/gamification", true);
+  registerProxy("/api/v1/payments", config.services.payment, "/payments", true, ["org_admin", "platform_admin"]);
+  registerProxy("/api/v1/webhooks", config.services.payment, "/webhooks", false);
 }

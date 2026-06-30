@@ -1,12 +1,7 @@
 // services/media-service/prisma/schema.prisma
-// media-service owns media assets and verification results.
-// Storage keys (R2 object paths) are stored here.
-// Public URLs are derived at read time, not stored —
-// this allows CDN URL changes without a DB migration.
-
 generator client {
   provider = "prisma-client-js"
-  output   = "../src/generated/prisma"
+  output   = "./node_modules/.prisma/client"
 }
 
 datasource db {
@@ -19,19 +14,14 @@ model MediaAsset {
   eventId             String
   userId              String
   type                MediaType
-  // R2 storage key — the object path in the bucket
-  // Example: "events/evt_abc/before/usr_xyz_1723456789.webp"
-  // NEVER store the full URL — it changes when CDN config changes
   storageKey          String             @unique
   fileSizeBytes       Int
   mimeType            String
   width               Int
   height              Int
   verificationStatus  VerificationStatus @default(PENDING)
-  // Confidence score from AI analysis (0.0 - 1.0)
   verificationScore   Float?
   verificationNotes   String?
-  // Tracks which pipeline version processed this asset
   pipelineVersion     String?
   uploadedAt          DateTime           @default(now())
   verifiedAt          DateTime?
@@ -41,7 +31,6 @@ model MediaAsset {
   @@index([eventId])
   @@index([userId])
   @@index([verificationStatus])
-  // Compound: most common query — all assets for an event + status
   @@index([eventId, verificationStatus])
 }
 

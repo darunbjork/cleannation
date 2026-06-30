@@ -35,6 +35,11 @@ export default fp(async function errorHandlerPlugin(
         .send(fail(error.code, error.message, meta, error.details))
     }
 
+    if (error && ((error as any).error?.code === ErrorCode.RATE_LIMITED || (error as any).statusCode === 429)) {
+      const statusCode = (error as any).statusCode ?? 429
+      return reply.status(statusCode).send(error)
+    }
+
     const fastifyError = error as FastifyError
     if (fastifyError.validation !== undefined) {
       logger.warn(

@@ -7,14 +7,6 @@ export default fp(async function rateLimitPlugin(
   fastify: FastifyInstance
 ) {
   await fastify.register(rateLimit as unknown as FastifyPluginAsync<RateLimitPluginOptions>, {
-    redis: process.env["REDIS_URL"]
-      ? {
-          host: new URL(process.env["REDIS_URL"]).hostname,
-          port: parseInt(
-            new URL(process.env["REDIS_URL"]).port ?? "6379"
-          ),
-        }
-      : undefined,
 
     keyGenerator: (request) => {
       if ("user" in request && request.user !== null) {

@@ -22,7 +22,7 @@ export const config = {
 
   jwt: {
     // PublicKey handled below
-    publicKey: requireEnv("JWT_PUBLIC_KEY"),
+    publicKey: requireEnv("JWT_PUBLIC_KEY").replace(/\\n/g, "\n"),
     algorithm: "RS256" as const,
     accessTokenExpiry: "15m",
   },

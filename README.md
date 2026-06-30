@@ -1,5 +1,7 @@
 # CleanNation 🌍
 
+![CI](https://github.com/darunbjork/cleannation/actions/workflows/ci.yml/badge.svg)
+
 > Organize. Coordinate. Verify. Clean the whole country.
 
 A civic SaaS platform for nationwide community cleanup events.

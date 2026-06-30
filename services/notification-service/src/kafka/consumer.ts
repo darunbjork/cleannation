@@ -117,7 +117,6 @@ async function processWithRetry(
       attempt++
 
       if (attempt < config.kafka.maxRetries) {
-        // Exponential backoff: 1s, 2s, 4s
         const delayMs =
           config.kafka.retryBaseDelayMs * Math.pow(2, attempt - 1)
 
@@ -165,16 +164,12 @@ async function processWithRetry(
 export async function startConsumer(): Promise<void> {
   consumer = kafka.consumer({
     groupId: config.kafka.groupId,
-    // Manual heartbeat — prevents false rebalances during slow processing
     heartbeatInterval: 3000,
-    // Session timeout — Kafka waits this long before rebalancing
-    // Must be > heartbeatInterval * 3
     sessionTimeout: 30000,
   })
 
   await consumer.connect()
 
-  // Subscribe to all relevant topics
   await consumer.subscribe({
     topics: [
       KAFKA_TOPICS.USER_REGISTERED,
@@ -187,13 +182,8 @@ export async function startConsumer(): Promise<void> {
   })
 
   await consumer.run({
-    // autoCommit: false — we commit manually AFTER processing
-    // This guarantees no message is lost if the consumer crashes mid-processing
     autoCommit: false,
 
-    // eachMessage: process one message at a time per partition
-    // This preserves ordering within a partition (all events for one
-    // eventId land on the same partition due to our partition key choice)
     eachMessage: async ({ topic, partition, message, heartbeat }) => {
       if (message.value === null) {
         logger.warn({ topic, partition }, "Null message value — skipping")
@@ -211,8 +201,6 @@ export async function startConsumer(): Promise<void> {
           { topic, partition },
           "Failed to parse Kafka message — skipping malformed message"
         )
-        // Commit offset even for unparseable messages
-        // A malformed message will never be parseable — do not block the partition
         await consumer?.commitOffsets([
           {
             topic,
@@ -223,15 +211,10 @@ export async function startConsumer(): Promise<void> {
         return
       }
 
-      // Send heartbeat during long processing to prevent rebalance
-      // notification sends can take 300-500ms
       await heartbeat()
 
       await processWithRetry(topic, envelope)
 
-      // ── MANUAL OFFSET COMMIT ──────────────────────────────────────
-      // Commit AFTER successful processing (or DLQ publish)
-      // This is the guarantee: offset only advances when message is handled
       await consumer?.commitOffsets([
         {
           topic,
@@ -247,7 +230,6 @@ export async function startConsumer(): Promise<void> {
 
 export async function stopConsumer(): Promise<void> {
   if (consumer !== null) {
-    // stop() waits for current message to finish — clean rebalance
     await consumer.stop()
     await consumer.disconnect()
     logger.info("notification-service consumer stopped")

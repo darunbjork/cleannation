@@ -153,7 +153,7 @@ const config = {
       "value": "prisma-client-js"
     },
     "output": {
-      "value": "/Users/darunbjork/Documents/micro-services/cleannation/services/media-service/src/generated/prisma",
+      "value": "/Users/bjork/Documents/microservices/backend/cleannation/services/media-service/src/generated/prisma",
       "fromEnvVar": null
     },
     "config": {
@@ -167,7 +167,7 @@ const config = {
       }
     ],
     "previewFeatures": [],
-    "sourceFilePath": "/Users/darunbjork/Documents/micro-services/cleannation/services/media-service/prisma/schema.prisma",
+    "sourceFilePath": "/Users/bjork/Documents/microservices/backend/cleannation/services/media-service/prisma/schema.prisma",
     "isCustomOutput": true
   },
   "relativeEnvPaths": {

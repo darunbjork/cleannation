@@ -38,6 +38,21 @@ async function buildServer() {
     genReqId: () => `req_${Math.random().toString(36).slice(2, 11)}`,
   })
 
+  // Register custom content-type parser to allow empty JSON bodies
+  fastify.addContentTypeParser("application/json", { parseAs: "string" }, (req, body, done) => {
+    if (typeof body === "string" && body.trim() === "") {
+      done(null, undefined)
+      return
+    }
+    try {
+      const json = JSON.parse(body)
+      done(null, json)
+    } catch (err: any) {
+      err.statusCode = 400
+      done(err)
+    }
+  })
+
   // Register plugins with explicit callback types
   await fastify.register(helmet as unknown as FastifyPluginCallback<FastifyHelmetOptions>, {
     contentSecurityPolicy: config.nodeEnv === "production",

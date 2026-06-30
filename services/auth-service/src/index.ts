@@ -111,6 +111,11 @@ async function buildServer() {
       )
     }
 
+    if (error && ((error as any).error?.code === ErrorCode.RATE_LIMITED || (error as any).statusCode === 429)) {
+      const statusCode = (error as any).statusCode ?? 429
+      return reply.status(statusCode).send(error)
+    }
+
     logServiceError(logger, error, { correlationId: request.correlationId })
     return reply.status(500).send(
       fail(ErrorCode.INTERNAL, "An unexpected error occurred", meta)
