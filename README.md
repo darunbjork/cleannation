@@ -4,14 +4,15 @@
 
 > Organize. Coordinate. Verify. Clean the whole country.
 
-A civic SaaS platform for nationwide community cleanup events.
-Microservice architecture. 100% open-source stack. $0.00/month infrastructure locally.
+CleanNation is a civic SaaS platform for coordinating nationwide community cleanup events. The system is built as a modular microservices architecture and is designed for local development with an open-source stack and zero infrastructure cost for local use.
 
-## Status
-🚧 Step 1 of N — Architecture blueprint complete
+## Overview
+
+CleanNation brings together event coordination, volunteer tracking, media uploads, gamification, and notifications into a unified platform. The architecture is organized around independent services communicating through REST, GraphQL, WebSocket, gRPC, and Kafka.
 
 ## Architecture
-7 microservices + API Gateway + Kafka event bus
+
+The platform currently consists of the following services:
 
 | Service | Protocol | Port |
 |---|---|---|
@@ -24,25 +25,39 @@ Microservice architecture. 100% open-source stack. $0.00/month infrastructure lo
 | notification-service | Kafka consumer | 3006 |
 | payment-service | REST + SOAP | 3007 |
 
-## Quick Start
+## Getting Started
+
+### Prerequisites
+
+- Docker Desktop
+- Bun
+- Node.js
+
+### Quick Start
+
 ```bash
 cp .env.example .env
 docker compose up -d
 ```
 
-## Monthly Cost
-$0.00 local development. See ARCHITECTURE.md for production cost estimate.
+### Development Verification
 
-## Development Steps
-- Staged and committed A Mustafa's initial uncommitted changes.<br>
-- Stopped conflicting PostgreSQL containers from another project and started CleanNation Docker Compose databases (PostgreSQL, Redis, Kafka) successfully.<br>
-- Created `.env` file for `event-service` with correct local ports (database port 5433, Kafka port 19092).<br>
-- Created `.env` file for `location-service` with correct local ports (database port 5434, Kafka port 19092).<br>
-- Created `.env` file for `gateway` with correct local microservice routing URLs and JWT public key.<br>
-- Created `.env` files for the remaining services (`gamification-service`, `media-service`, `notification-service`, `payment-service`) mapping databases and event bus ports correctly.<br>
+Run the workspace type-check before submitting changes:
 
+```bash
+bun run type-check
+```
 
+## Project Goals
 
+- Simplify volunteer event coordination
+- Provide realtime participation tracking
+- Support media and evidence submission
+- Encourage engagement through gamification
+- Enable reliable event and notification workflows
 
+## Cost Model
+
+Local development is designed to run at $0.00/month infrastructure cost. See the architecture documentation for production cost estimates.
 
 
