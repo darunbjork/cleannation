@@ -1,0 +1,153 @@
+version: "3.9"
+
+networks:
+  cleannation:
+    driver: bridge
+
+services:
+  gateway:
+    build:
+      context: ./gateway
+      dockerfile: Dockerfile
+    container_name: cn_gateway
+    networks: [cleannation]
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      NODE_ENV: production
+      GATEWAY_PORT: "${PORT:-3000}"
+      JWT_PUBLIC_KEY: "${JWT_PUBLIC_KEY}"
+      COOKIE_SECRET: "${COOKIE_SECRET}"
+      CORS_ORIGIN: "${CORS_ORIGIN}"
+      AUTH_SERVICE_URL: "${AUTH_SERVICE_URL}"
+      EVENT_SERVICE_URL: "${EVENT_SERVICE_URL}"
+      LOCATION_SERVICE_URL: "${LOCATION_SERVICE_URL}"
+      MEDIA_SERVICE_URL: "${MEDIA_SERVICE_URL}"
+      GAMIFICATION_SERVICE_URL: "${GAMIFICATION_SERVICE_URL}"
+      NOTIFICATION_SERVICE_URL: "${NOTIFICATION_SERVICE_URL}"
+      PAYMENT_SERVICE_URL: "${PAYMENT_SERVICE_URL}"
+    restart: always
+
+  auth-service:
+    build:
+      context: ./services/auth-service
+      dockerfile: Dockerfile
+    container_name: cn_auth
+    networks: [cleannation]
+    environment:
+      NODE_ENV: production
+      AUTH_SERVICE_PORT: "3001"
+      AUTH_DATABASE_URL: "${AUTH_DATABASE_URL}"
+      REDIS_URL: "${REDIS_URL}"
+      JWT_PRIVATE_KEY: "${JWT_PRIVATE_KEY}"
+      JWT_PUBLIC_KEY: "${JWT_PUBLIC_KEY}"
+      JWT_ACCESS_EXPIRY: "${JWT_ACCESS_EXPIRY:-15m}"
+      JWT_REFRESH_EXPIRY: "${JWT_REFRESH_EXPIRY:-7d}"
+      COOKIE_SECRET: "${COOKIE_SECRET}"
+      CORS_ORIGIN: "${CORS_ORIGIN}"
+      KAFKA_BROKERS: "${KAFKA_BROKERS}"
+    restart: always
+
+  event-service:
+    build:
+      context: ./services/event-service
+      dockerfile: Dockerfile
+    container_name: cn_event
+    networks: [cleannation]
+    environment:
+      NODE_ENV: production
+      EVENT_SERVICE_PORT: "3002"
+      EVENT_DATABASE_URL: "${EVENT_DATABASE_URL}"
+      KAFKA_BROKERS: "${KAFKA_BROKERS}"
+      CORS_ORIGIN: "${CORS_ORIGIN}"
+    restart: always
+
+  location-service:
+    build:
+      context: ./services/location-service
+      dockerfile: Dockerfile
+    container_name: cn_location
+    networks: [cleannation]
+    environment:
+      NODE_ENV: production
+      LOCATION_SERVICE_PORT: "3003"
+      LOCATION_DATABASE_URL: "${LOCATION_DATABASE_URL}"
+      KAFKA_BROKERS: "${KAFKA_BROKERS}"
+      CORS_ORIGIN: "${CORS_ORIGIN}"
+    restart: always
+
+  media-service:
+    build:
+      context: ./services/media-service
+      dockerfile: Dockerfile
+    container_name: cn_media
+    networks: [cleannation]
+    environment:
+      NODE_ENV: production
+      MEDIA_SERVICE_PORT: "3004"
+      MEDIA_GRPC_PORT: "50051"
+      MEDIA_DATABASE_URL: "${MEDIA_DATABASE_URL}"
+      KAFKA_BROKERS: "${KAFKA_BROKERS}"
+      R2_ACCOUNT_ID: "${R2_ACCOUNT_ID}"
+      R2_ACCESS_KEY_ID: "${R2_ACCESS_KEY_ID}"
+      R2_SECRET_ACCESS_KEY: "${R2_SECRET_ACCESS_KEY}"
+      R2_BUCKET_NAME: "${R2_BUCKET_NAME}"
+      R2_PUBLIC_URL: "${R2_PUBLIC_URL}"
+      CORS_ORIGIN: "${CORS_ORIGIN}"
+    restart: always
+
+  gamification-service:
+    build:
+      context: ./services/gamification-service
+      dockerfile: Dockerfile
+    container_name: cn_gamification
+    networks: [cleannation]
+    environment:
+      NODE_ENV: production
+      GAMIFICATION_SERVICE_PORT: "3005"
+      GAMIFICATION_DATABASE_URL: "${GAMIFICATION_DATABASE_URL}"
+      REDIS_URL: "${REDIS_URL}"
+      KAFKA_BROKERS: "${KAFKA_BROKERS}"
+      CORS_ORIGIN: "${CORS_ORIGIN}"
+    restart: always
+
+  notification-service:
+    build:
+      context: ./services/notification-service
+      dockerfile: Dockerfile
+    container_name: cn_notification
+    networks: [cleannation]
+    environment:
+      NODE_ENV: production
+      NOTIFICATION_SERVICE_PORT: "3006"
+      NOTIFICATION_DATABASE_URL: "${NOTIFICATION_DATABASE_URL}"
+      KAFKA_BROKERS: "${KAFKA_BROKERS}"
+      SMTP_HOST: "${SMTP_HOST}"
+      SMTP_PORT: "${SMTP_PORT}"
+      SMTP_USER: "${SMTP_USER}"
+      SMTP_PASS: "${SMTP_PASS}"
+      SMTP_FROM: "${SMTP_FROM}"
+      SMTP_FROM_NAME: "${SMTP_FROM_NAME}"
+      APP_BASE_URL: "${APP_BASE_URL}"
+      PUSH_VAPID_PUBLIC: "${PUSH_VAPID_PUBLIC}"
+      PUSH_VAPID_PRIVATE: "${PUSH_VAPID_PRIVATE}"
+      PUSH_VAPID_SUBJECT: "${PUSH_VAPID_SUBJECT}"
+    restart: always
+
+  payment-service:
+    build:
+      context: ./services/payment-service
+      dockerfile: Dockerfile
+    container_name: cn_payment
+    networks: [cleannation]
+    environment:
+      NODE_ENV: production
+      PAYMENT_SERVICE_PORT: "3007"
+      PAYMENT_DATABASE_URL: "${PAYMENT_DATABASE_URL}"
+      KAFKA_BROKERS: "${KAFKA_BROKERS}"
+      STRIPE_SECRET_KEY: "${STRIPE_SECRET_KEY}"
+      STRIPE_WEBHOOK_SECRET: "${STRIPE_WEBHOOK_SECRET}"
+      STRIPE_SUCCESS_URL: "${STRIPE_SUCCESS_URL}"
+      STRIPE_CANCEL_URL: "${STRIPE_CANCEL_URL}"
+      SOAP_API_KEY: "${SOAP_API_KEY}"
+    restart: always

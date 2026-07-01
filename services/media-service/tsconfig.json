@@ -15,6 +15,7 @@
     "exactOptionalPropertyTypes": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
+    "ignoreDeprecations": "5.0",
     "sourceMap": true,
     "paths": {
       "@prisma/client": ["./node_modules/@prisma/client"],

@@ -31,6 +31,7 @@ export const config = {
     brokers: requireEnv("KAFKA_BROKERS").split(","),
     clientId: "gamification-service",
     groupId: "gamification-service-group",
+    requestTimeout: 30000,
   },
 
   // Points awarded per action
